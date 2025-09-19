@@ -23,10 +23,10 @@ export default function ContactPage() {
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         if (formData.name && formData.email && formData.subject && formData.message) {
-            alert("Mesajın için teşekkürler");
+            alert("Mesajınız için teşekkürler!");
             setFormData({ name: "", email: "", subject: "", message: "" });
         } else {
-            alert("Please fill in all required fields.");
+            alert("Lütfen tüm zorunlu alanları doldurun.");
         }
     };
 
@@ -35,14 +35,14 @@ export default function ContactPage() {
             <Header />
             <div className="py-8">
                 <div className="container mx-auto px-4">
-                    <h1 className="text-3xl font-bold text-center mb-12">Contact Us</h1>
+                    <h1 className="text-3xl font-bold text-center mb-12">Bize Ulaşın</h1>
 
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-                        {/* Contact Info */}
+                        {/* İletişim Bilgileri */}
                         <div>
-                            <h2 className="text-2xl font-semibold mb-6">Get in Touch</h2>
+                            <h2 className="text-2xl font-semibold mb-6">İletişim</h2>
                             <p className="text-gray-600 mb-8">
-                                Have questions about our products or need support? We're here to help! Send us a message and we'll respond as soon as possible.
+                                Ürünlerimiz hakkında sorularınız mı var veya destek mi gerekiyor? Yardımcı olmaktan mutluluk duyarız! Bize mesaj gönderin, en kısa sürede yanıtlayacağız.
                             </p>
 
                             <div className="space-y-6">
@@ -51,7 +51,7 @@ export default function ContactPage() {
                                         <Phone className="text-blue-600" size={24} />
                                     </div>
                                     <div>
-                                        <h3 className="font-semibold">Phone</h3>
+                                        <h3 className="font-semibold">Telefon</h3>
                                         <p className="text-gray-600">+1 (555) 123-4567</p>
                                     </div>
                                 </div>
@@ -61,7 +61,7 @@ export default function ContactPage() {
                                         <Mail className="text-blue-600" size={24} />
                                     </div>
                                     <div>
-                                        <h3 className="font-semibold">Email</h3>
+                                        <h3 className="font-semibold">E-posta</h3>
                                         <p className="text-gray-600">support@techstore.com</p>
                                     </div>
                                 </div>
@@ -71,7 +71,7 @@ export default function ContactPage() {
                                         <MapPin className="text-blue-600" size={24} />
                                     </div>
                                     <div>
-                                        <h3 className="font-semibold">Address</h3>
+                                        <h3 className="font-semibold">Adres</h3>
                                         <p className="text-gray-600">
                                             123 Tech Street
                                             <br />
@@ -82,12 +82,12 @@ export default function ContactPage() {
                             </div>
                         </div>
 
-                        {/* Contact Form */}
+                        {/* İletişim Formu */}
                         <div>
                             <form onSubmit={handleSubmit} className="space-y-6">
                                 <div>
                                     <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
-                                        Name *
+                                        Adınız *
                                     </label>
                                     <input
                                         type="text"
@@ -102,7 +102,7 @@ export default function ContactPage() {
 
                                 <div>
                                     <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
-                                        Email *
+                                        E-posta *
                                     </label>
                                     <input
                                         type="email"
@@ -117,7 +117,7 @@ export default function ContactPage() {
 
                                 <div>
                                     <label htmlFor="subject" className="block text-sm font-medium text-gray-700 mb-2">
-                                        Subject *
+                                        Konu *
                                     </label>
                                     <input
                                         type="text"
@@ -132,7 +132,7 @@ export default function ContactPage() {
 
                                 <div>
                                     <label htmlFor="message" className="block text-sm font-medium text-gray-700 mb-2">
-                                        Message *
+                                        Mesajınız *
                                     </label>
                                     <textarea
                                         id="message"
@@ -149,7 +149,7 @@ export default function ContactPage() {
                                     type="submit"
                                     className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors"
                                 >
-                                    Send Message
+                                    Mesaj Gönder
                                 </button>
                             </form>
                         </div>

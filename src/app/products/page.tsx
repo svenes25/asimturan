@@ -7,86 +7,126 @@ import Footer from "@/components/footer";
 import { useRouter } from "next/navigation";
 
 export default function ProductsPage() {
-    const [currentPage, setCurrentPage] = useState("home");
-    const [selectedProduct, setSelectedProduct] = useState(null);
+    const router = useRouter();
+    const [searchTerm, setSearchTerm] = useState("");
+    const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+    const [priceRange, setPriceRange] = useState([0, 1000]);
+
+    const categories = ["Elektronik", "Aksesuar", "Sağlık", "Ofis"];
 
     const products = [
-        {
-            id: 1,
-            name: "Premium Wireless Headphones",
-            price: 299.99,
-            image: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=400&h=400&fit=crop",
-            rating: 4.8,
-            reviews: 124,
-            description: "Experience crystal-clear audio with our premium wireless headphones. Featuring active noise cancellation, 30-hour battery life, and premium comfort padding.",
-            features: ["Active Noise Cancellation", "30-hour battery", "Bluetooth 5.0", "Quick charge (15min = 3hrs)"],
-            inStock: true
-        },
-        {
-            id: 2,
-            name: "Smart Fitness Watch",
-            price: 199.99,
-            image: "https://images.unsplash.com/photo-1544117519-31a4b719223d?w=400&h=400&fit=crop",
-            rating: 4.6,
-            reviews: 89,
-            description: "Track your fitness goals with this advanced smartwatch. Features heart rate monitoring, GPS tracking, and 7-day battery life.",
-            features: ["Heart rate monitor", "GPS tracking", "Water resistant", "7-day battery"],
-            inStock: true
-        },
-        {
-            id: 3,
-            name: "Laptop Stand Pro",
-            price: 79.99,
-            image: "https://images.unsplash.com/photo-1527864550417-7fd91fc51a46?w=400&h=400&fit=crop",
-            rating: 4.7,
-            reviews: 156,
-            description: "Ergonomic aluminum laptop stand designed for comfort and productivity. Adjustable height and angle for optimal viewing.",
-            features: ["Aluminum construction", "Adjustable height", "Heat dissipation", "Portable design"],
-            inStock: false
-        },
-        {
-            id: 4,
-            name: "Wireless Charging Pad",
-            price: 49.99,
-            image: "https://images.unsplash.com/photo-1586953208448-b95a79798f07?w=400&h=400&fit=crop",
-            rating: 4.4,
-            reviews: 67,
-            description: "Fast wireless charging pad compatible with all Qi-enabled devices. Sleek design with LED indicator.",
-            features: ["Fast charging", "Qi compatible", "LED indicator", "Non-slip surface"],
-            inStock: true
-        },
-        {
-            id: 5,
-            name: "Bluetooth Speaker",
-            price: 129.99,
-            image: "https://images.unsplash.com/photo-1608043152269-423dbba4e7e1?w=400&h=400&fit=crop",
-            rating: 4.5,
-            reviews: 203,
-            description: "Portable Bluetooth speaker with 360° sound and waterproof design. Perfect for outdoor adventures.",
-            features: ["360° sound", "Waterproof IPX7", "12-hour battery", "Voice assistant"],
-            inStock: true
-        },
-        {
-            id: 6,
-            name: "USB-C Hub",
-            price: 89.99,
-            image: "https://images.unsplash.com/photo-1625842268584-8f3296236761?w=400&h=400&fit=crop",
-            rating: 4.3,
-            reviews: 91,
-            description: "Multi-port USB-C hub with HDMI, USB 3.0, and SD card slots. Essential for modern laptops.",
-            features: ["7-in-1 design", "4K HDMI output", "USB 3.0 ports", "SD card reader"],
-            inStock: true
-        }
+        { id: 1, name: "Kablosuz Premium Kulaklık", price: 299.99, image: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=400&h=400&fit=crop", rating: 4.8, reviews: 124, description: "Kristal netliğinde ses deneyimi sunan premium kablosuz kulaklık. Aktif gürültü engelleme, 30 saat batarya ömrü ve konforlu yastıklar.", inStock: true, category: "Elektronik" },
+        { id: 2, name: "Akıllı Fitness Saati", price: 199.99, image: "https://images.unsplash.com/photo-1544117519-31a4b719223d?w=400&h=400&fit=crop", rating: 4.6, reviews: 89, description: "Gelişmiş akıllı saat ile fitness hedeflerinizi takip edin.", inStock: true, category: "Sağlık" },
+        { id: 3, name: "Laptop Stand Pro", price: 79.99, image: "https://images.unsplash.com/photo-1527864550417-7fd91fc51a46?w=400&h=400&fit=crop", rating: 4.7, reviews: 156, description: "Ergonomik alüminyum laptop standı.", inStock: false, category: "Aksesuar" },
+        // diğer ürünler...
     ];
-    const router = useRouter();
+
+    // Kategori checkbox toggle
+    const toggleCategory = (category: string) => {
+        if (selectedCategories.includes(category)) {
+            setSelectedCategories(selectedCategories.filter(c => c !== category));
+        } else {
+            setSelectedCategories([...selectedCategories, category]);
+        }
+    };
+
+    // Filtreleme
+    const filteredProducts = products.filter(product => {
+        const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase());
+        const matchesCategory = selectedCategories.length === 0 || selectedCategories.includes(product.category);
+        const matchesPrice = product.price >= priceRange[0] && product.price <= priceRange[1];
+        return matchesSearch && matchesCategory && matchesPrice;
+    });
+
     return (
         <div>
             <Header />
-            <div className="py-8">
-                <div className="container mx-auto px-4">
-                    <h1 className="text-3xl font-bold mb-8">All Products</h1>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                        {products.map((product) => (
+            <div className="container mx-auto px-4 py-8 flex flex-col lg:flex-row gap-8">
+                {/* Sidebar */}
+                <aside className="w-full lg:w-1/4 bg-gray-50 p-6 rounded-lg shadow-md">
+                    <h2 className="text-xl font-bold mb-4">Filtreler</h2>
+
+                    {/* Arama */}
+                    <div className="mb-6">
+                        <input
+                            type="text"
+                            placeholder="Ürün ara..."
+                            value={searchTerm}
+                            onChange={e => setSearchTerm(e.target.value)}
+                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        />
+                    </div>
+
+                    {/* Kategori */}
+                    <div className="mb-6">
+                        <h3 className="font-semibold mb-2">Kategoriler</h3>
+                        {categories.map((cat, idx) => (
+                            <label key={idx} className="flex items-center gap-2 mb-1 cursor-pointer">
+                                <input
+                                    type="checkbox"
+                                    checked={selectedCategories.includes(cat)}
+                                    onChange={() => toggleCategory(cat)}
+                                    className="w-4 h-4"
+                                />
+                                <span>{cat}</span>
+                            </label>
+                        ))}
+                    </div>
+
+                    {/* Fiyat Aralığı */}
+                    <div className="mb-6">
+                        <h3 className="font-semibold mb-2">Fiyat Aralığı (₺)</h3>
+                        <div className="flex items-center gap-2 mb-2">
+                            <span className="w-12">Min:</span>
+                            <input
+                                type="number"
+                                value={priceRange[0]}
+                                min={0}
+                                onChange={(e) => setPriceRange([Number(e.target.value), priceRange[1]])}
+                                className="w-20 px-2 py-1 border border-gray-300 rounded-lg text-sm"
+                                placeholder="Min"
+                            />
+                            <input
+                                type="range"
+                                min={0}
+                                max={1000}
+                                value={priceRange[0]}
+                                onChange={(e) => setPriceRange([Number(e.target.value), priceRange[1]])}
+                                className="flex-1"
+                            />
+                        </div>
+
+                        <div className="flex items-center gap-2 mb-2">
+                            <span className="w-12">Max:</span>
+                            <input
+                                type="number"
+                                value={priceRange[1]}
+                                max={10000}
+                                onChange={(e) => setPriceRange([priceRange[0], Number(e.target.value)])}
+                                className="w-20 px-2 py-1 border border-gray-300 rounded-lg text-sm"
+                                placeholder="Max"
+                            />
+                            <input
+                                type="range"
+                                min={0}
+                                max={1000}
+                                value={priceRange[1]}
+                                onChange={(e) => setPriceRange([priceRange[0], Number(e.target.value)])}
+                                className="flex-1"
+                            />
+                        </div>
+                        <p className="text-gray-600 text-sm mt-2">
+                            Seçilen fiyat aralığı: {priceRange[0]}₺ - {priceRange[1]}₺
+                        </p>
+                    </div>
+                </aside>
+
+                {/* Ürünler */}
+                <main className="w-full lg:w-3/4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                    {filteredProducts.length === 0 ? (
+                        <p className="col-span-full text-center text-gray-500">Bu filtreye uygun ürün bulunamadı.</p>
+                    ) : (
+                        filteredProducts.map(product => (
                             <div
                                 key={product.id}
                                 className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow"
@@ -108,48 +148,36 @@ export default function ProductsPage() {
                                                 />
                                             ))}
                                         </div>
-                                        <span className="text-gray-600 text-sm ml-2">
-                                            ({product.reviews})
+                                        <span className="text-gray-600 text-sm ml-2">({product.reviews})</span>
+                                    </div>
+                                    <p className="text-gray-600 text-sm mb-4 line-clamp-2">{product.description}</p>
+                                    <div className="flex items-center justify-between mb-4">
+                                        <span className="text-2xl font-bold text-blue-600">{product.price}₺</span>
+                                        <span className={`px-2 py-1 rounded text-xs ${product.inStock ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}`}>
+                                            {product.inStock ? "Stokta" : "Stokta Yok"}
                                         </span>
                                     </div>
-                                    <p className="text-gray-600 text-sm mb-4 line-clamp-2">
-                                        {product.description}
-                                    </p>
-                                    <div className="flex items-center justify-between">
-                                        <span className="text-2xl font-bold text-blue-600">
-                                            ${product.price}
-                                        </span>
-                                        <span
-                                            className={`px-2 py-1 rounded text-xs ${
-                                                product.inStock
-                                                    ? "bg-green-100 text-green-800"
-                                                    : "bg-red-100 text-red-800"
-                                            }`}
-                                        >
-                                            {product.inStock ? "In Stock" : "Out of Stock"}
-                                        </span>
-                                    </div>
-                                    <div className="mt-4 space-y-2">
+                                    <div className="space-y-2">
                                         <button
                                             onClick={() => router.push(`/products/${product.id}`)}
                                             className="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition-colors"
                                         >
-                                            View Details
+                                            Detayları Gör
                                         </button>
                                         {product.inStock && (
                                             <button
-                                                onClick={() => alert(`Added ${product.name} to cart`)}
+                                                onClick={() => alert(`${product.name} sepete eklendi.`)}
                                                 className="w-full bg-gray-100 text-gray-800 py-2 rounded-lg hover:bg-gray-200 transition-colors"
                                             >
-                                                Add to Cart
+                                                Sepete Ekle
                                             </button>
                                         )}
                                     </div>
                                 </div>
                             </div>
-                        ))}
-                    </div>
-                </div>
+                        ))
+                    )}
+                </main>
             </div>
             <Footer />
         </div>

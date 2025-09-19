@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import { Eye, EyeOff } from "lucide-react";
 import Header from "@/components/header";
 import Footer from "@/components/footer";
+import {useRouter} from "next/navigation";
 
 export default function RegisterPage() {
     const [formData, setFormData] = useState({
@@ -17,7 +18,7 @@ export default function RegisterPage() {
     const [loading, setLoading] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-
+    const router = useRouter();
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
         if (error) setError("");
@@ -31,17 +32,17 @@ export default function RegisterPage() {
             !formData.password ||
             !formData.confirmPassword
         ) {
-            return "Please fill in all fields";
+            return "Lütfen tüm alanları doldurun";
         }
         if (formData.password !== formData.confirmPassword) {
-            return "Passwords do not match";
+            return "Şifreler eşleşmiyor";
         }
         if (formData.password.length < 6) {
-            return "Password must be at least 6 characters long";
+            return "Şifre en az 6 karakter olmalıdır";
         }
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (!emailRegex.test(formData.email)) {
-            return "Please enter a valid email address";
+            return "Lütfen geçerli bir e-posta adresi girin";
         }
         return null;
     };
@@ -56,8 +57,8 @@ export default function RegisterPage() {
 
         setLoading(true);
         setTimeout(() => {
-            // Demo register, replace with actual API call
-            alert(`Account created for ${formData.firstName} ${formData.lastName}`);
+            // Demo kayıt, gerçekte API çağrısı yapılacak
+            alert(`${formData.firstName} ${formData.lastName} için hesap oluşturuldu`);
             setFormData({
                 firstName: "",
                 lastName: "",
@@ -75,7 +76,7 @@ export default function RegisterPage() {
             <div className="py-8">
                 <div className="container mx-auto px-4">
                     <div className="max-w-md mx-auto bg-white rounded-lg shadow-md p-8">
-                        <h1 className="text-3xl font-bold text-center mb-8">Create Account</h1>
+                        <h1 className="text-3xl font-bold text-center mb-8">Hesap Oluştur</h1>
 
                         {error && (
                             <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-6">
@@ -87,7 +88,7 @@ export default function RegisterPage() {
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                                        First Name *
+                                        Ad *
                                     </label>
                                     <input
                                         type="text"
@@ -95,12 +96,12 @@ export default function RegisterPage() {
                                         value={formData.firstName}
                                         onChange={handleChange}
                                         className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                        placeholder="First name"
+                                        placeholder="Adınız"
                                     />
                                 </div>
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                                        Last Name *
+                                        Soyad *
                                     </label>
                                     <input
                                         type="text"
@@ -108,14 +109,14 @@ export default function RegisterPage() {
                                         value={formData.lastName}
                                         onChange={handleChange}
                                         className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                        placeholder="Last name"
+                                        placeholder="Soyadınız"
                                     />
                                 </div>
                             </div>
 
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    Email Address *
+                                    E-posta Adresi *
                                 </label>
                                 <input
                                     type="email"
@@ -123,13 +124,13 @@ export default function RegisterPage() {
                                     value={formData.email}
                                     onChange={handleChange}
                                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                    placeholder="Enter your email"
+                                    placeholder="E-posta adresinizi girin"
                                 />
                             </div>
 
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    Password *
+                                    Şifre *
                                 </label>
                                 <div className="relative">
                                     <input
@@ -138,7 +139,7 @@ export default function RegisterPage() {
                                         value={formData.password}
                                         onChange={handleChange}
                                         className="w-full px-4 py-2 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                        placeholder="Create a password"
+                                        placeholder="Şifre oluşturun"
                                     />
                                     <button
                                         type="button"
@@ -156,7 +157,7 @@ export default function RegisterPage() {
 
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    Confirm Password *
+                                    Şifreyi Onayla *
                                 </label>
                                 <div className="relative">
                                     <input
@@ -165,7 +166,7 @@ export default function RegisterPage() {
                                         value={formData.confirmPassword}
                                         onChange={handleChange}
                                         className="w-full px-4 py-2 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                        placeholder="Confirm your password"
+                                        placeholder="Şifrenizi tekrar girin"
                                     />
                                     <button
                                         type="button"
@@ -188,18 +189,18 @@ export default function RegisterPage() {
                                     loading ? "bg-gray-400 cursor-not-allowed" : "bg-blue-600 hover:bg-blue-700"
                                 } text-white`}
                             >
-                                {loading ? "Creating Account..." : "Create Account"}
+                                {loading ? "Hesap Oluşturuluyor..." : "Hesap Oluştur"}
                             </button>
 
                             <div className="text-center">
                                 <p className="text-gray-600">
-                                    Already have an account?{" "}
+                                    Zaten hesabınız var mı?{" "}
                                     <button
                                         type="button"
                                         className="text-blue-600 hover:text-blue-800 font-semibold"
-                                        onClick={() => alert("Go to login page")}
+                                        onClick={() => router.push("/login")}
                                     >
-                                        Sign in here
+                                        Buradan giriş yapın
                                     </button>
                                 </p>
                             </div>
