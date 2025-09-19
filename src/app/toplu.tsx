@@ -1141,15 +1141,6 @@ const ContactPage = () => {
         message: ''
     });
 
-    const handleSubmit = () => {
-        if (formData.name && formData.email && formData.subject && formData.message) {
-            alert('Thank you for your message! We\'ll get back to you soon.');
-            setFormData({ name: '', email: '', subject: '', message: '' });
-        } else {
-            alert('Please fill in all required fields.');
-        }
-    };
-
     const handleChange = (e) => {
         setFormData({
             ...formData,

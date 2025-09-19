@@ -1,13 +1,10 @@
 "use client"
-import React, { useState } from 'react';
-import { ShoppingCart, Star, Phone, Mail, MapPin, ArrowLeft, Plus, Minus, User, Lock, Eye, EyeOff, CreditCard, Home, Edit3, Trash2 } from 'lucide-react';
+import { ShoppingCart, Star, Phone} from 'lucide-react';
 import Header from "@/components/header";
 import Footer from "@/components/footer";
 import { useRouter } from "next/navigation";
 
 export default function HomePage() {
-    const [currentPage, setCurrentPage] = useState('home');
-    const [selectedProduct, setSelectedProduct] = useState(null);
     const router = useRouter()
     const products = [
         {
@@ -81,7 +78,6 @@ export default function HomePage() {
 
     <div>
         <Header />
-
         {/* Hero Section */}
         <section className="bg-gradient-to-r from-blue-600 to-purple-600 text-white py-20">
             <div className="container mx-auto px-4 text-center">

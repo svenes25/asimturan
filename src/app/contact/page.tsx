@@ -23,7 +23,7 @@ export default function ContactPage() {
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         if (formData.name && formData.email && formData.subject && formData.message) {
-            alert("Thank you for your message! We'll get back to you soon.");
+            alert("Mesajın için teşekkürler");
             setFormData({ name: "", email: "", subject: "", message: "" });
         } else {
             alert("Please fill in all required fields.");

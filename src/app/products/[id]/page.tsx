@@ -189,7 +189,7 @@ export default function ProductDetailPage() {
             setComments([comment, ...comments]);
             setNewComment("");
             setNewRating(5);
-            setCurrentSlide(0); // Show the new comment first
+            setCurrentSlide(0);
         }
     };
 
