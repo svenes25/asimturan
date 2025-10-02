@@ -74,8 +74,8 @@ export default function HomePage() {
             {/* Hero Section */}
             <section className="bg-gradient-to-r from-blue-600 to-purple-600 text-white py-20">
                 <div className="container mx-auto px-4 text-center">
-                    <h1 className="text-6xl font-bold mb-4">Asım Turan</h1>
-                    <h2 className="text-3xl font-semibold">Kâğıt, Ambalaj ve Temizlik Ürünleri</h2>
+                    <h1 className="text-9xl font-bold mb-4">ASIM TURAN</h1>
+                    <h2 className="text-4xl font-semibold">KAĞIT, AMBALAJ VE TEMİZLİK ÜRÜNLERİ</h2>
                 </div>
             </section>
 
