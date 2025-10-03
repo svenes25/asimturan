@@ -1,3 +1,5 @@
+from typing import Optional
+
 from pydantic import BaseModel
 
 class AddressBase(BaseModel):
@@ -6,6 +8,8 @@ class AddressBase(BaseModel):
 
 class AddressCreate(AddressBase):
     pass
+class AddressUpdate(BaseModel):
+    address: Optional[str]
 
 class AddressRead(AddressBase):
     id: int

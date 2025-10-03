@@ -1,13 +1,13 @@
 from pydantic import BaseModel
-from typing import Optional
 from datetime import datetime
 
 class ProductBase(BaseModel):
     name: str
     price: float
-    limit: Optional[int] = None
-    limited_price: Optional[float] = None
-    description: str
+    limited: int | None = None
+    limited_price: float | None = None
+    description: str | None = None
+    image_url: str | None = None   # 👈 görsel yolu
 
 class ProductCreate(ProductBase):
     pass
@@ -18,4 +18,4 @@ class ProductRead(ProductBase):
     updated_at: datetime
 
     class Config:
-        orm_mode = True
+        from_attributes = True

@@ -5,6 +5,7 @@ import { Eye, EyeOff } from "lucide-react";
 import Header from "@/components/header";
 import Footer from "@/components/footer";
 import {useRouter} from "next/navigation";
+import {useAuth} from "@/lib/auth";
 
 export default function RegisterPage() {
     const [formData, setFormData] = useState({
@@ -19,6 +20,7 @@ export default function RegisterPage() {
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     const router = useRouter();
+    const {register} = useAuth()
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
         if (error) setError("");
@@ -47,18 +49,27 @@ export default function RegisterPage() {
         return null;
     };
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+
         const validationError = validateForm();
         if (validationError) {
             setError(validationError);
             return;
         }
 
-        setLoading(true);
-        setTimeout(() => {
-            // Demo kayıt, gerçekte API çağrısı yapılacak
-            alert(`${formData.firstName} ${formData.lastName} için hesap oluşturuldu`);
+        try {
+            setLoading(true);
+
+            // API çağrısı
+            const userData = await register(formData)
+            if(userData)
+            {
+                router.push("/profile");
+            }
+
+            alert(`${formData.firstName} ${formData.lastName} için hesap oluşturuldu!`);
+
             setFormData({
                 firstName: "",
                 lastName: "",
@@ -66,9 +77,15 @@ export default function RegisterPage() {
                 password: "",
                 confirmPassword: "",
             });
+
+        } catch (err: any) {
+            console.error(err);
+            setError(err.response?.data?.detail || "Kayıt sırasında bir hata oluştu");
+        } finally {
             setLoading(false);
-        }, 1000);
+        }
     };
+
 
     return (
         <div>

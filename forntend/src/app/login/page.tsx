@@ -5,6 +5,7 @@ import { Eye, EyeOff } from "lucide-react";
 import Header from "@/components/header";
 import Footer from "@/components/footer";
 import { useRouter } from "next/navigation";
+import {useAuth} from "@/lib/auth";
 
 export default function LoginPage() {
     const [formData, setFormData] = useState({ email: "", password: "" });
@@ -12,6 +13,7 @@ export default function LoginPage() {
     const [loading, setLoading] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
     const router = useRouter();
+    const {login,user,isAdmin} = useAuth()
     const [users, setUsers] = useState([
         {
             id: 1,
@@ -27,35 +29,23 @@ export default function LoginPage() {
         if (error) setError("");
     };
 
-    const login = (email: string, password: string) => {
-        if(email === "admin@gmail.com" && password === "admin") {
-            router.push("/admin");
-        }
-        const foundUser = users.find(u => u.email === email && u.password === password);
-        if (foundUser) {
-            return { success: true };
-        }
-        return { success: false, error: 'E-posta veya şifre hatalı' };
-    };
-
-    const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-        e.preventDefault();
-
-        if (!formData.email || !formData.password) {
-            setError('Lütfen tüm alanları doldurun');
-            return;
-        }
-
+    const handleLogin = async (event: React.FormEvent<HTMLFormElement>) => {
+        event.preventDefault(); // sayfa yenilenmesini durdurur
         setLoading(true);
-        setTimeout(() => {
-            const result = login(formData.email, formData.password);
-            if (result.success) {
-                router.push('/profile');
+
+        try {
+            const userData = await login(formData.email, formData.password);
+            if (userData.role === "admin") {
+                router.push("/admin");
             } else {
-                setError(result.error);
+                router.push(`/profile/${userData.id}`);
             }
+        } catch (err) {
+            console.error("Login failed:", err);
+            // Hata mesajı gösterebilirsin
+        } finally {
             setLoading(false);
-        }, 1000);
+        }
     };
 
     return (
@@ -82,7 +72,7 @@ export default function LoginPage() {
                             </p>
                         </div>
 
-                        <form className="space-y-6" onSubmit={handleSubmit}>
+                        <form className="space-y-6" onSubmit={handleLogin}>
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-2">
                                     E-posta Adresi *

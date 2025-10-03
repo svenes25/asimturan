@@ -17,3 +17,8 @@ class PaymentRead(PaymentBase):
     model_config = {
         "from_attributes": True
     }
+class PaymentUpdate(BaseModel):
+    name: Optional[str]
+    number: Optional[str]
+    date: Optional[str]
+    cvv: Optional[str]

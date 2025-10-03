@@ -1,14 +1,16 @@
-from sqlalchemy import Column, Integer, String, Numeric, Text, DateTime
-from sqlalchemy.sql import func
+from sqlalchemy import Column, Integer, String, Float, Text, DateTime
 from ..database import Base
+from datetime import datetime
 
 class Product(Base):
     __tablename__ = "product"
+
     id = Column(Integer, primary_key=True, index=True)
-    name = Column(String(100), nullable=False)
-    price = Column(Numeric(10,2), nullable=False)
-    stock_limit = Column(Integer, nullable=True)
-    limited_price = Column(Numeric(10,2), nullable=True)
-    description = Column(Text)
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
-    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+    name = Column(String, nullable=False)
+    price = Column(Float, nullable=False)
+    limited = Column(Integer, nullable=True)
+    limited_price = Column(Float, nullable=True)
+    description = Column(Text, nullable=True)
+    image_url = Column(Text, nullable=True)  # 👈 görsel yolu buraya
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)

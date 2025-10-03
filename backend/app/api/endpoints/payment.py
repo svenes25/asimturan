@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from ..database import get_db
 from ..models.payment import Payment
-from ..schemas.payment import PaymentCreate, PaymentRead
+from ..schemas.payment import PaymentCreate, PaymentRead, PaymentUpdate
 
 router = APIRouter(prefix="/payments", tags=["payments"])
 
@@ -25,17 +25,24 @@ def create_payment(payment: PaymentCreate, db: Session = Depends(get_db)):
     db.refresh(db_pay)
     return db_pay
 
-@router.put("/{id}", response_model=PaymentRead)
-def update_payment(id: int, payment: PaymentCreate, db: Session = Depends(get_db)):
-    db_pay = db.query(Payment).filter(Payment.id == id).first()
-    if not db_pay:
-        raise HTTPException(status_code=404, detail="Payment not found")
-    for key, value in payment.dict().items():
-        setattr(db_pay, key, value)
-    db.commit()
-    db.refresh(db_pay)
-    return db_pay
+@router.put("/user/{user_id}", response_model=PaymentRead)
+def update_or_create_payment(user_id: int, updated_payment: PaymentUpdate, db: Session = Depends(get_db)):
+    # Var olan payment'i bul
+    payment = db.query(Payment).filter(Payment.user_id == user_id).first()
 
+    if payment:
+        # Eğer varsa, alanları güncelle
+        for key, value in updated_payment.dict(exclude_unset=True).items():
+            setattr(payment, key, value)
+    else:
+        # Yoksa yeni oluştur
+        payment_data = updated_payment.dict()
+        payment = Payment(user_id=user_id, **payment_data)
+        db.add(payment)
+
+    db.commit()
+    db.refresh(payment)
+    return payment
 @router.delete("/{id}")
 def delete_payment(id: int, db: Session = Depends(get_db)):
     db_pay = db.query(Payment).filter(Payment.id == id).first()

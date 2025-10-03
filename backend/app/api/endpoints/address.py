@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from ..database import get_db
 from ..models.address import Address
-from ..schemas.address import AddressCreate, AddressRead
+from ..schemas.address import AddressCreate, AddressRead, AddressUpdate
 
 router = APIRouter(prefix="/addresses", tags=["addresses"])
 
@@ -35,6 +35,20 @@ def update_address(id: int, address: AddressCreate, db: Session = Depends(get_db
     db.commit()
     db.refresh(db_addr)
     return db_addr
+@router.put("/user/{user_id}", response_model=AddressRead)
+def update_address(user_id: int, updated_addr: AddressUpdate, db: Session = Depends(get_db)):
+    address = db.query(Address).filter(Address.user_id == user_id).first()
+
+    if not address:
+        address = Address(user_id=user_id, **updated_addr.dict(exclude_unset=True))
+        db.add(address)
+    else:
+        for key, value in updated_addr.dict(exclude_unset=True).items():
+            setattr(address, key, value)
+
+    db.commit()
+    db.refresh(address)
+    return address
 
 @router.delete("/{id}")
 def delete_address(id: int, db: Session = Depends(get_db)):

@@ -1,5 +1,10 @@
+from typing import List
+
 from pydantic import BaseModel
 from datetime import datetime
+
+from app.api.schemas.order_details import OrderDetailsBase
+
 
 class OrdersBase(BaseModel):
     user_id: int
@@ -12,5 +17,5 @@ class OrdersCreate(OrdersBase):
 
 class OrdersRead(OrdersBase):
     id: int
-
+    detail : List[OrderDetailsBase]
     model_config = {"from_attributes": True}  # Pydantic v2 uyumlu

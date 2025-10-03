@@ -4,99 +4,53 @@ import React, { useState, useEffect } from "react";
 import { Star, MessageSquare, Edit3, Check, X } from "lucide-react";
 import Header from "@/components/header";
 import Footer from "@/components/footer";
-
-// Demo user global state, replace with context or API call
-let user = {
-    firstName: "John",
-    lastName: "Doe",
-    email: "john@example.com",
-    addresses: [
-        { id: 1, type: "Billing", line1: "123 Main St", city: "San Francisco", state: "CA", zip: "94105" },
-        { id: 2, type: "Shipping", line1: "456 Market St", city: "San Francisco", state: "CA", zip: "94107" }
-    ],
-    payment: { cardType: "Visa", last4: "1234", expiry: "12/25" },
-    memberSince: "January 2025",
-    orders: [
-        {
-            id: 'ORD-001',
-            date: '2025-01-15',
-            status: 'Delivered',
-            total: 299.99,
-            items: [
-                {
-                    name: 'Premium Wireless Headphones',
-                    quantity: 1,
-                    price: 299.99,
-                    rating: 5,
-                    comment: "Excellent sound quality and battery life. Highly recommended!"
-                }
-            ]
-        },
-        {
-            id: 'ORD-002',
-            date: '2025-01-20',
-            status: 'Delivered',
-            total: 279.98,
-            items: [
-                {
-                    name: 'Smart Fitness Watch',
-                    quantity: 1,
-                    price: 199.99,
-                    rating: 4,
-                    comment: "Great fitness tracking features, but the app could be better."
-                },
-                {
-                    name: 'Laptop Stand Pro',
-                    quantity: 1,
-                    price: 79.99,
-                    rating: null,
-                    comment: ""
-                }
-            ]
-        },
-        {
-            id: 'ORD-003',
-            date: '2025-01-10',
-            status: 'Delivered',
-            total: 179.98,
-            items: [
-                {
-                    name: 'Bluetooth Speaker',
-                    quantity: 1,
-                    price: 129.99,
-                    rating: null,
-                    comment: ""
-                },
-                {
-                    name: 'Wireless Charging Pad',
-                    quantity: 1,
-                    price: 49.99,
-                    rating: null,
-                    comment: ""
-                }
-            ]
-        }
-    ]
-};
-
+import {useUsers} from "@/lib/users";
+import {useAuth} from "@/lib/auth";
+import {useParams} from "next/navigation";
 export default function ProfilePage({ onNavigate }) {
+    const params = useParams(); // URL parametrelerini alır
+    const userId = params.id;
     const [editing, setEditing] = useState(false);
+    const {fetchUser,user,updateUser,updateAddress,updatePayment} = useUsers()
     const [reviewingItem, setReviewingItem] = useState(null);
     const [reviewData, setReviewData] = useState({ rating: 5, comment: "" });
     const [formData, setFormData] = useState({
-        firstName: user?.firstName || "",
-        lastName: user?.lastName || "",
-        email: user?.email || "",
-        addresses: user?.addresses || [],
-        payment: user?.payment || {}
+        name: "",
+        surname: "",
+        mail: "",
+        tel: "",
+        addresses: [],
+        payment: { name: "", number: "", date: "", cvv: "" },
+        orders: []
     });
 
+// useEffect içinde
     useEffect(() => {
-        if (!user) {
-            // Eğer kullanıcı yoksa login sayfasına yönlendir
-            onNavigate && onNavigate("login");
+        if (user) {
+            setFormData({
+                name: user.name || "",
+                surname: user.surname || "",
+                mail: user.mail || "",
+                tel: user.tel || "",
+                addresses: user.addresses || [],
+                payment: user.payments?.[0] || { name: "", number: "", date: "", cvv: "" },
+                orders: user.orders || []
+            });
         }
-    }, []);
+    }, [user]);
+
+    useEffect(() => {
+        const getUser = async () => {
+            if (!userId) {
+                // userId yoksa login sayfasına yönlendir
+                onNavigate && onNavigate("login");
+                return;
+            }
+            await fetchUser(userId);
+        };
+
+        getUser();
+    }, [userId, fetchUser, onNavigate]);
 
     const handleChange = (e, field, addrIndex = null) => {
         if (field === "addresses" && addrIndex !== null) {
@@ -110,11 +64,33 @@ export default function ProfilePage({ onNavigate }) {
         }
     };
 
-    const handleSave = () => {
-        user = { ...user, ...formData }; // demo update
-        setEditing(false);
-        alert("Profile updated successfully!");
+    const handleSave = async () => {
+        try {
+            await updateUser(userId, {
+                name: formData.name,
+                surname: formData.surname,
+                mail: formData.mail,
+                tel: formData.tel
+            });
+            const firstAddressObj = (formData.addresses || []).find(a => (a.address || "").trim() !== "");
+            const addressString = firstAddressObj ? firstAddressObj.address : "";
+
+            await updateAddress(userId, { address: addressString });
+            await updatePayment(userId, {
+                name: formData.payment.name,
+                number: formData.payment.number,
+                date: formData.payment.date,
+                cvv: formData.payment.cvv
+            });
+
+            setEditing(false);
+            alert("Profil başarıyla güncellendi!");
+        } catch (err) {
+            console.error("Update failed:", err);
+            alert("Güncelleme sırasında hata oluştu!");
+        }
     };
+
 
     const startReview = (orderId, itemIndex) => {
         const order = user.orders.find(o => o.id === orderId);
@@ -187,23 +163,25 @@ export default function ProfilePage({ onNavigate }) {
             <Header />
             <div className="py-8">
                 <div className="container mx-auto px-4 max-w-3xl">
-                    <h1 className="text-3xl font-bold mb-8">My Profile</h1>
+                    <h1 className="text-3xl font-bold mb-8">Profilim</h1>
 
                     {/* Personal Info */}
                     <div className="bg-white rounded-lg shadow-md p-6 mb-6">
                         <div className="flex justify-between items-center mb-4">
-                            <h2 className="text-xl font-semibold">Personal Information</h2>
+                            <h2 className="text-xl font-semibold">Kişisel Bilgiler</h2>
                             <button
                                 onClick={() => (editing ? handleSave() : setEditing(true))}
                                 className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
                             >
-                                {editing ? "Save Changes" : "Edit Profile"}
+                                {editing ? "Kaydet" : "Güncelle"}
                             </button>
                         </div>
                         <div className="grid grid-cols-2 gap-4 mb-4">
-                            {["firstName", "lastName"].map((field, idx) => (
+                            {["name", "surname"].map((field, idx) => (
                                 <div key={idx}>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">{field === "firstName" ? "First Name" : "Last Name"}</label>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                        {field === "name" ? "İsim" : "Soyisim"}
+                                    </label>
                                     {editing ? (
                                         <input
                                             type="text"
@@ -217,109 +195,156 @@ export default function ProfilePage({ onNavigate }) {
                                     )}
                                 </div>
                             ))}
-                        </div>
 
-                        <div className="mb-4">
-                            <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
-                            {editing ? (
-                                <input
-                                    type="email"
-                                    name="email"
-                                    value={formData.email}
-                                    onChange={handleChange}
-                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                />
-                            ) : (
-                                <p className="text-gray-900">{user.email}</p>
-                            )}
+                            {["mail", "tel"].map((field, idx) => (
+                                <div key={idx}>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                        {field === "mail" ? "Mail" : "Telefon"}
+                                    </label>
+                                    {editing ? (
+                                        <input
+                                            type={field === "mail" ? "mail" : "tel"}
+                                            name={field}
+                                            value={formData[field]}
+                                            onChange={handleChange}
+                                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                        />
+                                    ) : (
+                                        <p className="text-gray-900">{user[field === "mail" ? "mail" : "tel"]}</p>
+                                    )}
+                                </div>
+                            ))}
                         </div>
 
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">Member Since</label>
-                            <p className="text-gray-900">{user.memberSince}</p>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">Üyelik Tarihi</label>
+                            <p className="text-gray-900">{new Date(user.created_at).toLocaleString()}</p>
                         </div>
                     </div>
 
                     {/* Addresses */}
                     <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-                        <h2 className="text-xl font-semibold mb-4">Addresses</h2>
-                        {formData.addresses.map((addr, idx) => (
-                            <div key={addr.id} className="mb-4 border-b pb-2">
-                                <h3 className="font-semibold mb-2">{addr.type} Address</h3>
-                                {editing ? (
-                                    <div className="grid grid-cols-1 gap-2">
-                                        <input
-                                            type="text"
-                                            name="line1"
-                                            value={addr.line1}
-                                            onChange={(e) => handleChange(e, "addresses", idx)}
-                                            className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-                                            placeholder="Address Line 1"
-                                        />
-                                        <input
-                                            type="text"
-                                            name="city"
-                                            value={addr.city}
-                                            onChange={(e) => handleChange(e, "addresses", idx)}
-                                            className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-                                            placeholder="City"
-                                        />
-                                        <input
-                                            type="text"
-                                            name="state"
-                                            value={addr.state}
-                                            onChange={(e) => handleChange(e, "addresses", idx)}
-                                            className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-                                            placeholder="State"
-                                        />
-                                        <input
-                                            type="text"
-                                            name="zip"
-                                            value={addr.zip}
-                                            onChange={(e) => handleChange(e, "addresses", idx)}
-                                            className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-                                            placeholder="ZIP Code"
-                                        />
-                                    </div>
-                                ) : (
-                                    <p className="text-gray-900">{`${addr.line1}, ${addr.city}, ${addr.state} ${addr.zip}`}</p>
-                                )}
-                            </div>
-                        ))}
+                        <h2 className="text-xl font-semibold mb-4">Adres</h2>
+                        {editing ? (
+                            formData.addresses.map((addr, idx) => (
+                                <input
+                                    key={idx}
+                                    type="text"
+                                    name="address"
+                                    value={addr.address || ""}
+                                    onChange={(e) => {
+                                        const newAddresses = [...formData.addresses];
+                                        newAddresses[idx].address = e.target.value;
+                                        setFormData({ ...formData, addresses: newAddresses });
+                                    }}
+                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                                    placeholder="Adres"
+                                />
+                            ))
+                        ) : (
+                            <p className="text-gray-900">{formData.addresses[0]?.address}</p>
+                        )}
                     </div>
-
                     {/* Payment Info */}
                     <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-                        <h2 className="text-xl font-semibold mb-4">Payment Information</h2>
+                        <h2 className="text-xl font-semibold mb-4">Ödeme Bilgileri</h2>
                         {editing ? (
-                            <div className="grid grid-cols-1 gap-2">
-                                <input
-                                    type="text"
-                                    name="cardType"
-                                    value={formData.payment.cardType}
-                                    onChange={(e) => handleChange(e, "payment")}
-                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-                                    placeholder="Card Type"
-                                />
-                                <input
-                                    type="text"
-                                    name="last4"
-                                    value={formData.payment.last4}
-                                    onChange={(e) => handleChange(e, "payment")}
-                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-                                    placeholder="Last 4 digits"
-                                />
-                                <input
-                                    type="text"
-                                    name="expiry"
-                                    value={formData.payment.expiry}
-                                    onChange={(e) => handleChange(e, "payment")}
-                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-                                    placeholder="Expiry MM/YY"
-                                />
+                            <div className="grid grid-cols-1 gap-3 mb-4">
+                                <label className="text-sm font-medium text-gray-700">
+                                    Kart Sahibi
+                                    <input
+                                        name="name"
+                                        type="text"
+                                        value={formData.payment?.name || ""}
+                                        onChange={(e) => handleChange(e, "payment")}
+                                        className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                        placeholder="Ör: ENES DEMİR"
+                                        autoComplete="cc-name"
+                                        aria-label="Kart sahibi adı"
+                                    />
+                                </label>
+
+                                <label className="text-sm font-medium text-gray-700">
+                                    Kart Numarası
+                                    <input
+                                        name="number"
+                                        type="text"
+                                        inputMode="numeric"
+                                        pattern="\d*"
+                                        maxLength={16}
+                                        value={formData.payment?.number || ""}
+                                        onChange={(e) => {
+                                            // Sadece rakam bırak, boşluk ve diğer karakterleri çıkar
+                                            const digits = e.target.value.replace(/\D/g, "");
+                                            // Opsiyonel: maksimum 16 hane (kart numarası) ile sınırlama
+                                            const limited = digits.slice(0, 16);
+                                            // Doğrudan e.target.value'yi değil, handleChange ile state'i güncelle
+                                            // handleChange beklediği şekilde bir event benzeri obje oluştur
+                                            handleChange({ target: { name: e.target.name, value: limited } }, "payment");
+                                        }}
+                                        className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                        placeholder="1234567890123456"
+                                        autoComplete="cc-number"
+                                        aria-label="Kart numarası"
+                                    />
+                                    <p className="text-xs text-gray-500 mt-1">Boşluklarla ayrılmış 16 haneli kart numarası</p>
+                                </label>
+
+                                <div className="grid grid-cols-2 gap-3">
+                                    <label className="text-sm font-medium text-gray-700">
+                                        Son Kullanma Tarihi
+                                        <input
+                                            name="date"
+                                            type="text"
+                                            value={formData.payment?.date || ""}
+                                            onChange={(e) => {
+                                                // opsiyonel: MM/YY formatına kısmi maskeleme
+                                                let v = e.target.value.replace(/[^\d]/g, "");
+                                                if (v.length > 2) v = v.slice(0, 2) + "/" + v.slice(2, 4);
+                                                e.target.value = v;
+                                                handleChange(e, "payment");
+                                            }}
+                                            maxLength={5}
+                                            placeholder="MM/YY"
+                                            className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                            autoComplete="cc-exp"
+                                            aria-label="Kart son kullanma tarihi"
+                                        />
+                                    </label>
+
+                                    <label className="text-sm font-medium text-gray-700">
+                                        CVV
+                                        <input
+                                            name="cvv"
+                                            type="password"
+                                            inputMode="numeric"
+                                            maxLength={4}
+                                            value={formData.payment?.cvv || ""}
+                                            onChange={(e) => {
+                                                e.target.value = e.target.value.replace(/[^\d]/g, "");
+                                                handleChange(e, "payment");
+                                            }}
+                                            className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                            placeholder="123"
+                                            autoComplete="cc-csc"
+                                            aria-label="Kart CVV"
+                                        />
+                                    </label>
+                                </div>
                             </div>
                         ) : (
-                            <p className="text-gray-900">{`${user.payment.cardType} **** ${user.payment.last4} (Exp: ${user.payment.expiry})`}</p>
+                            <div className="mb-4">
+                                <p className="text-sm text-gray-500">Kayıtlı Kart</p>
+                                <p className="text-gray-900 font-medium">
+                                    {formData.payment?.number
+                                        ? // maskelenmiş gösterim: son 4 hane görünür
+                                        "**** **** **** " + (formData.payment.number.replace(/\s/g, "").slice(-4) || "----")
+                                        : "Kayıtlı kart yok"}
+                                </p>
+                                <p className="text-xs text-gray-500 mt-1">
+                                    Kart sahibi: <span className="text-gray-700">{formData.payment?.name || "-"}</span>
+                                </p>
+                            </div>
                         )}
                     </div>
 
@@ -336,8 +361,8 @@ export default function ProfilePage({ onNavigate }) {
 
                     {/* Orders with Reviews */}
                     <div className="bg-white rounded-lg shadow-md p-6">
-                        <h2 className="text-xl font-semibold mb-4">My Orders</h2>
-                        {user.orders.map(order => (
+                        <h2 className="text-xl font-semibold mb-4">Siparişler</h2>
+                        {user?.orders?.map(order => (
                             <div key={order.id} className="mb-6 border-b pb-6">
                                 <div className="flex justify-between items-start mb-4">
                                     <div>
