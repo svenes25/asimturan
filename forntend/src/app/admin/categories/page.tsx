@@ -5,46 +5,43 @@ import React, { useState } from "react";
 import Header from "@/components/header";
 import Footer from "@/components/footer";
 import Sidebar from "@/components/sidebar";
+import {useCategories} from "@/lib/categories";
 
 export default function CategoryManagement() {
     const [searchTerm, setSearchTerm] = useState("");
     const [showAddForm, setShowAddForm] = useState(false);
-    const [editingCategory, setEditingCategory] = useState(null);
+    const [editingCategory, setEditingCategory] = useState<{ id: number; name: string } | null>(null);
     const [newCategoryName, setNewCategoryName] = useState("");
 
-    const sampleCategories = [
-        { id: 1, name: "Electronics" },
-        { id: 2, name: "Clothing" },
-        { id: 3, name: "Home & Kitchen" },
-    ];
+    const {
+        categories,
+        createCategory,
+        deleteCategory,
+        fetchCategories,
+        updateCategory
+    } = useCategories();
 
-    const [categories, setCategories] = useState(sampleCategories);
-
-    const handleAddCategory = () => {
+    const handleAddCategory = async () => {
         if (!newCategoryName.trim()) return;
-        const newCategory = {
-            id: Date.now(),
-            name: newCategoryName.trim(),
-        };
-        setCategories([...categories, newCategory]);
+        await createCategory(newCategoryName.trim());
         setNewCategoryName("");
         setShowAddForm(false);
     };
 
-    const handleEditCategory = () => {
-        setCategories(
-            categories.map((c) =>
-                c.id === editingCategory.id ? editingCategory : c
-            )
-        );
+    const handleEditCategory = async () => {
+        if (!editingCategory || !editingCategory.name.trim()) return;
+        await updateCategory(editingCategory.id, editingCategory.name.trim());
         setEditingCategory(null);
+        fetchCategories();
     };
 
-    const handleDeleteCategory = (id) => {
-        setCategories(categories.filter((c) => c.id !== id));
-    };
+    const handleDeleteCategory = async (id: number) => {
+        const confirmed = window.confirm("Bu kategoriyi silmek istediğinize emin misiniz?");
+        if (!confirmed) return;
 
-    return (
+        await deleteCategory(id);
+    }
+        return (
         <div>
             <Header />
             <div className="py-8 bg-gray-100 min-h-screen">
