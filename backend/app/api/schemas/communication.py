@@ -4,8 +4,8 @@ from datetime import datetime
 class CommunicationBase(BaseModel):
     tel: str
     mail: str
-    adress: str
-    time: datetime
+    address: str
+    time: str
 
 class CommunicationCreate(CommunicationBase):
     pass

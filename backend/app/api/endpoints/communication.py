@@ -25,20 +25,25 @@ def create_communication(comm: CommunicationCreate, db: Session = Depends(get_db
     db.refresh(db_comm)
     return db_comm
 
-@router.put("/{id}", response_model=CommunicationRead)
-def update_communication(id: int, comm: CommunicationCreate, db: Session = Depends(get_db)):
-    db_comm = db.query(Communication).filter(Communication.id == id).first()
+@router.put("/", response_model=CommunicationRead)
+def update_communication(comm: CommunicationCreate, db: Session = Depends(get_db)):
+    db_comm = db.query(Communication).first()
+
     if not db_comm:
-        raise HTTPException(status_code=404, detail="Communication not found")
+        db_comm = Communication(**comm.dict())
+        db.add(db_comm)
+        db.commit()
+        db.refresh(db_comm)
+        return db_comm
     for key, value in comm.dict().items():
         setattr(db_comm, key, value)
     db.commit()
     db.refresh(db_comm)
     return db_comm
 
-@router.delete("/{id}")
-def delete_communication(id: int, db: Session = Depends(get_db)):
-    db_comm = db.query(Communication).filter(Communication.id == id).first()
+@router.delete("/")
+def delete_communication(db: Session = Depends(get_db)):
+    db_comm = db.query(Communication).first()
     if not db_comm:
         raise HTTPException(status_code=404, detail="Communication not found")
     db.delete(db_comm)

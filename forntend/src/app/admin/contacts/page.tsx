@@ -1,16 +1,56 @@
 "use client";
-import React, { useState } from "react";
+import React, {useEffect, useState} from "react";
 import Header from "@/components/header";
 import Footer from "@/components/footer";
 import Sidebar from "@/components/sidebar";
+import {useContactInfo} from "@/lib/contacts";
 
 export default function ProductsManagement() {
+    const { contactInfo: contact, fetchContactInfo, updateContactInfo } = useContactInfo();
+
     const [contactInfo, setContactInfo] = useState({
-        address: "Necmettin Erbakan Üniversitesi, Konya",
-        phone: "+90 555 123 4567",
-        email: "info@firma.com",
-        workingHours: "09:00 - 18:00"
+        address: "",
+        tel: "",
+        mail: "",
+        time: ""
     });
+    useEffect(() => {
+        if (contact) {
+            setContactInfo({
+                address: contact.address,
+                tel: contact.tel,
+                mail: contact.mail,
+                time: contact.time
+            });
+        }
+    }, [contact]);
+    const [isSaving, setIsSaving] = useState(false);
+    useEffect(() => {
+        const getContactInfo = async () => {
+            try {
+                const data = await fetchContactInfo();
+                setContactInfo(data);
+            } catch (err) {
+                console.error("İletişim bilgisi alınamadı:", err);
+            }
+        };
+        getContactInfo()
+    }, []);
+
+    const handleSave = async () => {
+        setIsSaving(true);
+        try {
+            console.log(contactInfo)
+            await updateContactInfo(contactInfo);
+            alert("İletişim bilgisi güncellendi!");
+        } catch (err) {
+            console.error("Güncelleme hatası:", err);
+            alert("Güncelleme başarısız oldu.");
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
     return (
         <div>
             <Header />
@@ -31,7 +71,7 @@ export default function ProductsManagement() {
                                 <div className="flex justify-between items-center border-b pb-3 mb-4">
                                     <h2 className="text-2xl font-bold text-gray-800">İletişim Bilgisi</h2>
                                     <button
-                                        onClick={() => alert("Contact info saved!")}
+                                        onClick={() => handleSave()}
                                         className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 flex items-center"
                                     >
                                         Kaydet
@@ -41,7 +81,7 @@ export default function ProductsManagement() {
                                 <div className="grid gap-4">
                                     <input
                                         type="text"
-                                        value={contactInfo.address}
+                                        value={contactInfo?.address || ""}
                                         onChange={(e) =>
                                             setContactInfo({ ...contactInfo, address: e.target.value })
                                         }
@@ -50,27 +90,27 @@ export default function ProductsManagement() {
                                     />
                                     <input
                                         type="text"
-                                        value={contactInfo.phone}
+                                        value={contactInfo?.tel || ""}
                                         onChange={(e) =>
-                                            setContactInfo({ ...contactInfo, phone: e.target.value })
+                                            setContactInfo({ ...contactInfo, tel: e.target.value })
                                         }
                                         className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-green-500"
                                         placeholder="Telefon"
                                     />
                                     <input
                                         type="email"
-                                        value={contactInfo.email}
+                                        value={contactInfo?.mail || ""}
                                         onChange={(e) =>
-                                            setContactInfo({ ...contactInfo, email: e.target.value })
+                                            setContactInfo({ ...contactInfo, mail: e.target.value })
                                         }
                                         className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-green-500"
                                         placeholder="Email"
                                     />
                                     <input
                                         type="text"
-                                        value={contactInfo.workingHours}
+                                        value={contactInfo?.time || ""}
                                         onChange={(e) =>
-                                            setContactInfo({ ...contactInfo, workingHours: e.target.value })
+                                            setContactInfo({ ...contactInfo, time: e.target.value })
                                         }
                                         className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-green-500"
                                         placeholder="Çalışma Saatleri"

@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import { Phone, Mail, MapPin } from "lucide-react";
 import Header from "@/components/header";
 import Footer from "@/components/footer";
+import {useContactInfo} from "@/lib/contacts";
 
 export default function ContactPage() {
     const [formData, setFormData] = useState({
@@ -12,7 +13,7 @@ export default function ContactPage() {
         subject: "",
         message: "",
     });
-
+    const {contactInfo} = useContactInfo()
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         setFormData({
             ...formData,
@@ -52,7 +53,7 @@ export default function ContactPage() {
                                     </div>
                                     <div>
                                         <h3 className="font-semibold">Telefon</h3>
-                                        <p className="text-gray-600">+1 (555) 123-4567</p>
+                                        <p className="text-gray-600">{contactInfo.tel}</p>
                                     </div>
                                 </div>
 
@@ -62,7 +63,7 @@ export default function ContactPage() {
                                     </div>
                                     <div>
                                         <h3 className="font-semibold">E-posta</h3>
-                                        <p className="text-gray-600">support@techstore.com</p>
+                                        <p className="text-gray-600">{contactInfo.mail}</p>
                                     </div>
                                 </div>
 
@@ -73,9 +74,7 @@ export default function ContactPage() {
                                     <div>
                                         <h3 className="font-semibold">Adres</h3>
                                         <p className="text-gray-600">
-                                            123 Tech Street
-                                            <br />
-                                            San Francisco, CA 94105
+                                            {contactInfo.address}
                                         </p>
                                     </div>
                                 </div>

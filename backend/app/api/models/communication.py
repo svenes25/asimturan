@@ -8,4 +8,4 @@ class Communication(Base):
     tel = Column(String(20))
     mail = Column(String(100))
     address = Column(Text)
-    time = Column(DateTime(timezone=True), server_default=func.now())
+    time = Column(String(20))
