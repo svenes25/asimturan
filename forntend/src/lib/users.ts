@@ -20,6 +20,19 @@ export function useUsers() {
             setError(err.message || "An error occurred");
         }
     }, []);
+    const fetchUsers = useCallback(async () => {
+        try {
+            setError(null);
+            const response = await api.get(`/users`);
+            setUsers(response.data);
+            console.log("Gelen users:", response.data); // burada yazdır
+        } catch (err: any) {
+            setError(err.message || "An error occurred");
+        }
+    }, []);
+    const addAdmin = useCallback(async (newadmin: string) => {
+        const res = await api.put("/users/admin", newadmin);
+    }, []);
     // Kullanıcı seç
     const selectUser = useCallback(
         (userId: number) => {
@@ -28,28 +41,33 @@ export function useUsers() {
         },
         [users]
     )
-
-    
-
-    // Yeni kullanıcı ekle
-    const addUser = useCallback(
-        async (userData: Partial<User>) => {
-            try {
-                const response = await api.postRequest("/users/", userData)
-                setUsers((prev) => [...prev, response.data])
-            } catch (err) {
-                console.error("Error adding user:", err)
-                setError("Kullanıcı eklenirken hata oluştu.")
-            }
-        },
-        []
-    )
-
-    // Kullanıcı güncelle
+    const selectAdmin = useCallback(() => {
+        const user = users.filter((u) => u.role === "admin")
+        if (user) setSelectedUser(user)
+        console.log(selectedUser)
+    }, [users])
+    useEffect(() => {
+        if (users.length > 0) {
+            selectAdmin();
+        }
+    }, [users, selectAdmin]);
     const updateUser = useCallback(async (id: string, data: any) => {
         const res = await api.put(`/users/${id}`, data);
         setUser(res.data);
         return res.data;
+    }, []);
+    const updatePassword = useCallback(async (id: string, currentPassword: string, newPassword: string) => {
+        try {
+            const res = await api.put(`/users/${id}/password`, {
+                currentPassword,
+                newPassword,
+            });
+            setUser(res.data);
+            return res.data;
+        } catch (err: any) {
+            console.error("Password update error:", err);
+            throw err;
+        }
     }, []);
     const updateAddress = useCallback(async (id: string, data: any) => {
         const res = await api.put(`/addresses/user/${id}`, data);
@@ -85,10 +103,13 @@ export function useUsers() {
         isLoading,
         error,
         selectUser,
-        addUser,
+        selectAdmin,
         updateUser,
         deleteUser,
         updateAddress,
-        updatePayment
+        updatePayment,
+        updatePassword,
+        addAdmin,
+        fetchUsers
     }
 }

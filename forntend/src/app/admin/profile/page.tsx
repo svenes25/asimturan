@@ -6,17 +6,18 @@ import Header from "@/components/header";
 import Footer from "@/components/footer";
 import Sidebar from "@/components/sidebar";
 import Link from "next/link";
+import {useAuth} from "@/lib/auth";
+import {useUsers} from "@/lib/users";
 export default function OrdersManagement() {
     const [editing, setEditing] = useState(false);
-    const [user, setUser] = useState({
-        firstName: "Enes",
-        lastName: "Seven",
-        email: "enes@example.com",
-        memberSince: "2023-01-01",
-    });
-
+    const {user,saveUser} = useAuth()
+    const {updateUser,updatePassword} = useUsers()
+    const [_,setUser] = useState()
     const [formData, setFormData] = useState({
-        ...user,
+        name: user?.name || "",
+        surname: user?.surname || "",
+        mail: user?.mail || "",
+        tel: user?.tel || "",
         currentPassword: "",
         newPassword: "",
         confirmPassword: "",
@@ -26,21 +27,34 @@ export default function OrdersManagement() {
         setFormData({ ...formData, [e.target.name]: e.target.value });
     };
 
-    const handleSave = () => {
-        // Burada backend API'ye gönderim yapılabilir
-        setUser({
-            firstName: formData.firstName,
-            lastName: formData.lastName,
-            email: formData.email,
-            memberSince: user.memberSince,
-        });
+    const handleSave = async () => {
+        try {
+            // Kullanıcı bilgilerini güncelle
+            const updatedData: any = {
+                name: formData.name,
+                surname: formData.surname,
+                mail: formData.mail,
+                tel: formData.tel,
+            };
 
-        if (formData.newPassword && formData.newPassword === formData.confirmPassword) {
-            console.log("Password updated:", formData.newPassword);
-            // şifre güncelleme API çağrısı
+            const updatedUser = await updateUser(user.id, updatedData);
+            saveUser(updatedUser)
+            if (formData.newPassword) {
+                if (formData.newPassword !== formData.confirmPassword) {
+                    alert("Yeni şifre ve tekrar aynı olmalıdır!");
+                    return;
+                }
+
+                await updatePassword(user.id,formData.currentPassword,formData.newPassword)
+
+                alert("Şifre başarıyla güncellendi!");
+            }
+            setEditing(false);
+            alert("Bilgiler başarıyla güncellendi!");
+        } catch (err: any) {
+            console.error(err);
+            alert(err?.response?.data?.detail || "Güncelleme sırasında hata oluştu");
         }
-
-        setEditing(false);
     };
     return (
         <div>
@@ -70,56 +84,49 @@ export default function OrdersManagement() {
                                         onClick={() => (editing ? handleSave() : setEditing(true))}
                                         className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
                                     >
-                                        {editing ? "Save Changes" : "Edit Profile"}
+                                        {editing ? "Kaydet" : "Düzenle"}
                                     </button>
                                 </div>
 
                                 {/* İsim - Soyisim */}
                                 <div className="grid grid-cols-2 gap-4 mb-4">
-                                    {["firstName", "lastName"].map((field, idx) => (
+                                    {["name", "surname", "mail", "tel"].map((field, idx) => (
                                         <div key={idx}>
                                             <label className="block text-sm font-medium text-gray-700 mb-2">
-                                                {field === "firstName" ? "First Name" : "Last Name"}
+                                                {field === "name"
+                                                    ? "İsim"
+                                                    : field === "surname"
+                                                        ? "Soyisim"
+                                                        : field === "mail"
+                                                            ? "Email"
+                                                            : "Telefon"}
                                             </label>
                                             {editing ? (
                                                 <input
-                                                    type="text"
+                                                    type={field === "mail" ? "email" : field === "tel" ? "tel" : "text"}
                                                     name={field}
-                                                    value={formData[field as "firstName" | "lastName"]}
+                                                    value={formData[field as "name" | "surname" | "mail" | "tel"]}
                                                     onChange={handleChange}
                                                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                                                 />
                                             ) : (
-                                                <p className="text-gray-900">{user[field as "firstName" | "lastName"]}</p>
+                                                <p className="text-gray-900">
+                                                    {user?.[field as "name" | "surname" | "mail" | "tel"] || "-"}
+                                                </p>
                                             )}
                                         </div>
                                     ))}
                                 </div>
 
-                                {/* Email */}
-                                <div className="mb-4">
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
-                                    {editing ? (
-                                        <input
-                                            type="email"
-                                            name="email"
-                                            value={formData.email}
-                                            onChange={handleChange}
-                                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                        />
-                                    ) : (
-                                        <p className="text-gray-900">{user.email}</p>
-                                    )}
-                                </div>
 
                                 {/* Şifre Güncelleme */}
                                 {editing && (
                                     <div className="mb-4">
-                                        <h3 className="text-lg font-semibold mb-2">Change Password</h3>
+                                        <h3 className="text-lg font-semibold mb-2">Şifre Değiştir</h3>
                                         <div className="space-y-3">
                                             <div>
                                                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                                                    Current Password
+                                                    Mevcut Şifre
                                                 </label>
                                                 <input
                                                     type="password"
@@ -131,7 +138,7 @@ export default function OrdersManagement() {
                                             </div>
                                             <div>
                                                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                                                    New Password
+                                                    Yeni Şifre
                                                 </label>
                                                 <input
                                                     type="password"
@@ -143,7 +150,7 @@ export default function OrdersManagement() {
                                             </div>
                                             <div>
                                                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                                                    Confirm New Password
+                                                    Tekrar Yeni Şifre
                                                 </label>
                                                 <input
                                                     type="password"
@@ -159,8 +166,8 @@ export default function OrdersManagement() {
 
                                 {/* Üyelik tarihi */}
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">Member Since</label>
-                                    <p className="text-gray-900">{user.memberSince}</p>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">Üyelik Tarihi</label>
+                                    <p className="text-gray-900">{new Date(user?.created_at).toLocaleString()}</p>
                                 </div>
                             </div>
                         </div>

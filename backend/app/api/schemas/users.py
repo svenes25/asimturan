@@ -2,9 +2,9 @@ from pydantic import BaseModel, EmailStr
 from datetime import datetime
 from typing import Optional, List
 
-from app.api.schemas.address import  AddressBase
-from app.api.schemas.orders import OrdersRead
-from app.api.schemas.payment import PaymentRead
+from api.schemas.address import  AddressBase
+from api.schemas.orders import OrdersRead
+from api.schemas.payment import PaymentRead
 
 
 class UserBase(BaseModel):
@@ -39,3 +39,6 @@ class UserUpdate(BaseModel):
 
     class Config:
         orm_mode = True
+class EmailPayload(BaseModel):
+    mail: str
+    role: str

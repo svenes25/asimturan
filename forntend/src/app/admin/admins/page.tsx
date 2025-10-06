@@ -1,43 +1,54 @@
 "use client";
 
 import {
-    Edit,
     Save,
     Trash2,
     X, UserPlus, Shield,
 } from "lucide-react";
-import React, { useState } from "react";
+import React, {useEffect, useState} from "react";
 import Header from "@/components/header";
 import Footer from "@/components/footer";
 import Sidebar from "@/components/sidebar";
+import {useUsers} from "@/lib/users";
 
 export default function ProductsManagement() {
-    const sampleAdmins = [
-        {
-            id: 1,
-            name: "John Admin",
-            email: "john@admin.com",
-            role: "Super Admin",
-            lastLogin: "2025-01-15",
-            status: "Active"
-        },
-        {
-            id: 2,
-            name: "Sarah Manager",
-            email: "sarah@admin.com",
-            role: "Product Manager",
-            lastLogin: "2025-01-14",
-            status: "Active"
-        }
-    ];
-    const [admins, setAdmins] = useState(sampleAdmins);
+    const {fetchUsers,selectAdmin,selectedUser,addAdmin} = useUsers()
+    const [admins, setAdmins] = useState(selectedUser);
     const [showAddAdminForm , setshowAddAdminForm ] = useState(null);
     const [newAdmin, setNewAdmin] = useState({ email: "" });
-    const handleDeleteAdmin = (id) => {
+    useEffect(() => {
+        const runOnMount = async () => {
+            await fetchUsers();
+        };
+        runOnMount();
+    }, []);
+    useEffect(() => {
+        if (selectedUser) {
+            setAdmins(selectedUser)
+        }
+    }, [selectedUser]);
+    const handleDeleteAdmin = async(id) => {
         if (confirm("Are you sure you want to remove this administrator?")) {
             setAdmins(admins.filter(a => a.id !== id));
+            const adminMail = admins.find(a => a.id === id)?.mail;
+            const payload = {
+                mail: adminMail,
+                role: "user"
+            };
+            await addAdmin(payload);
         }
     };
+    const handleAddAdmin = async () => {
+        const payload = {
+            mail: newAdmin.email,
+            role: "admin",
+        };
+        await addAdmin(payload);
+        setshowAddAdminForm(false);
+        setNewAdmin({ email: "" });
+    };
+
+
     return (
         <div>
             <Header />
@@ -72,13 +83,12 @@ export default function ProductsManagement() {
                                     <thead className="bg-gray-50">
                                     <tr>
                                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">İsim</th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Son Giriş</th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Durum</th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Son Güncelleme</th>
                                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Butonlar</th>
                                     </tr>
                                     </thead>
                                     <tbody className="bg-white divide-y divide-gray-200">
-                                    {admins.map((admin) => (
+                                    {admins?.map((admin) => (
                                         <tr key={admin.id}>
                                             <td className="px-6 py-4 whitespace-nowrap">
                                                 <div className="flex items-center">
@@ -88,19 +98,13 @@ export default function ProductsManagement() {
                                                         </div>
                                                     </div>
                                                     <div className="ml-4">
-                                                        <div className="text-sm font-medium text-gray-900">{admin.name}</div>
-                                                        <div className="text-sm text-gray-500">{admin.email}</div>
+                                                        <div className="text-sm font-medium text-gray-900">{admin.name} {admin.surname}</div>
+                                                        <div className="text-sm text-gray-500">{admin.mail}</div>
                                                     </div>
                                                 </div>
                                             </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{admin.lastLogin}</td>
-                                            <td className="px-6 py-4 whitespace-nowrap">
-                                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                                        admin.status === "Active" ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"
-                                    }`}>
-                                        {admin.status}
-                                    </span>
-                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{new Date(admin?.updated_at).toLocaleString()}</td>
+
                                             <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
                                                 <button
                                                     onClick={() => handleDeleteAdmin(admin.id)}
@@ -133,22 +137,7 @@ export default function ProductsManagement() {
 
                                             <div className="flex space-x-3 mt-6">
                                                 <button
-                                                    onClick={() => {
-                                                        const newId =
-                                                            admins.length > 0
-                                                                ? Math.max(...admins.map(a => a.id)) + 1
-                                                                : 1;
-                                                        setAdmins([
-                                                            ...admins,
-                                                            {
-                                                                ...newAdmin,
-                                                                id: newId,
-                                                                lastLogin: new Date().toISOString().slice(0, 10)
-                                                            }
-                                                        ]);
-                                                        setshowAddAdminForm(false);
-                                                        setNewAdmin({ email: "" }); // alanı temizle
-                                                    }}
+                                                    onClick={handleAddAdmin}
                                                     className="flex-1 bg-green-600 text-white py-2 rounded-lg hover:bg-green-700 flex items-center justify-center"
                                                 >
                                                     <Save size={16} className="inline mr-2" />

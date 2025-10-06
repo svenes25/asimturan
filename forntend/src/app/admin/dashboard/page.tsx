@@ -4,31 +4,21 @@ import React, { useState } from "react";
 import {
     Package,
     Users,
-    Settings,
     Tag,
-    Mail,
-    Plus,
-    Edit,
-    Trash2,
-    Search,
-    Star,
     DollarSign,
-    UserPlus,
-    Shield,
-    MessageSquare,
     BarChart3,
-    Calendar,
-    Eye,
     Save,
     X,
-    Phone,
-    Truck,
 } from "lucide-react";
 import Header from "@/components/header";
 import Footer from "@/components/footer";
 import Sidebar from "@/components/sidebar";
+import {useProducts} from "@/lib/products";
+import {useOrders} from "@/lib/orders";
 
 export default function AdminDashboard() {
+    const {products} = useProducts()
+    const {orders} = useOrders()
     return (
         <div>
             <Header/>
@@ -51,7 +41,7 @@ export default function AdminDashboard() {
                                         <Package className="text-blue-600" size={24} />
                                         <div className="ml-4">
                                             <h3 className="text-2xl font-bold"></h3>
-                                            <p className="text-gray-600">Total Products</p>
+                                            <p className="text-gray-600">Toplam ürün sayısı: {products?.length || 0}</p>
                                         </div>
                                     </div>
                                 </div>
@@ -60,7 +50,7 @@ export default function AdminDashboard() {
                                         <BarChart3 className="text-green-600" size={24} />
                                         <div className="ml-4">
                                             <h3 className="text-2xl font-bold"></h3>
-                                            <p className="text-gray-600">Total Orders</p>
+                                            <p className="text-gray-600">Topla Sipariş: {orders.length || 0}</p>
                                         </div>
                                     </div>
                                 </div>

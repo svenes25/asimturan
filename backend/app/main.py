@@ -26,9 +26,13 @@ def root():
 
 # Uvicorn ile başlatma
 if __name__ == "__main__":
+    import os
+    import sys
+    sys.path.append(os.path.dirname(os.path.dirname(__file__)))
+
     uvicorn.run(
-        "main:app",          # main.py içindeki app
-        host="0.0.0.0",      # tüm IP'lerden erişim
-        port=8000,           # port
-        reload=True          # kod değişince otomatik reload
+        "app.main:app",
+        host="0.0.0.0",
+        port=8000,
+        reload=True
     )

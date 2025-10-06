@@ -30,7 +30,7 @@ export default function LoginPage() {
     };
 
     const handleLogin = async (event: React.FormEvent<HTMLFormElement>) => {
-        event.preventDefault(); // sayfa yenilenmesini durdurur
+        event.preventDefault();
         setLoading(true);
 
         try {
