@@ -1,103 +1,120 @@
-"use client"
+import { useState, useEffect, useCallback } from "react";
+import api from "@/lib/api.ts";
 
-import { useState, useEffect, useCallback, useRef } from "react"
-import api from "@/lib/api.ts"
+type Product = {
+    id: number;
+    name: string;
+    description: string;
+    price: number;
+    imageUrl?: string;
+};
 
 export function useProducts() {
-    const [products, setProducts] = useState<[]>([])
-    const [product, setProduct] = useState<>(null)
-    const [selectedProduct, setSelectedProduct] = useState<>(null)
-    const [isLoading, setIsLoading] = useState<boolean>(false)
-    const [error, setError] = useState<string | null>(null)
-    const lastFetchRef = useRef<number>(0)
+    const [products, setProducts] = useState<Product[]>([]);
+    const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+    const [isLoading, setIsLoading] = useState<boolean>(false);
+    const [error, setError] = useState<string | null>(null);
+
+    // Tüm ürünleri çek
     const fetchProducts = useCallback(async () => {
+        setIsLoading(true);
+        setError(null);
         try {
-            setIsLoading(true)
-            setError(null)
-            const res = await api.get("/products")
-            setProducts(res.data)
+            const res = await api.get("/products");
+            setProducts(res.data);
         } catch (err: any) {
-            setError(err.message || "Ürünler alınırken hata oluştu.")
+            setError(err.message || "Ürünler alınamadı.");
         } finally {
-            setIsLoading(false)
+            setIsLoading(false);
         }
-    }, [])
-    const fetchProduct = useCallback(async (id: string | number | undefined) => {
-        if (!id) return
+    }, []);
+
+    // Tek ürün çek
+    const fetchProduct = useCallback(async (id: number) => {
+        setIsLoading(true);
+        setError(null);
         try {
-            setError(null)
-            const res = await api.get(`/products/${id}`)
-            setProduct(res.data)
+            const res = await api.get(`/products/${id}`);
+            setSelectedProduct(res.data);
         } catch (err: any) {
-            setError(err.message || "Ürün alınırken hata oluştu.")
+            setError(err.message || "Ürün alınamadı.");
+        } finally {
+            setIsLoading(false);
         }
-    }, [])
+    }, []);
 
-    const selectProduct = useCallback(
-        (productId: number) => {
-            const found = products.find((p) => p.id === productId)
-            if (found) setSelectedProduct(found)
-        },
-        [products]
-    )
-
-    const addProduct = useCallback(async (data: Partial<Product>) => {
+    // Yeni ürün ekle
+    const createProduct = useCallback(async (data: Omit<Product, "id">) => {
+        setError(null);
         try {
-            setError(null)
-            const res = await api.postRequest("/products", data)
-            setProducts((prev) => [...prev, res.data])
+            const res = await api.post("/products", data);
+            setProducts((prev) => [...prev, res.data]);
+            return res.data;
         } catch (err: any) {
-            console.error("Error adding product:", err)
-            setError("Ürün eklenirken hata oluştu.")
+            setError(err.message || "Ürün eklenemedi.");
         }
-    }, [])
+    }, []);
 
-    const updateProduct = useCallback(async (id: string | number, data: any) => {
+    // Ürün güncelle
+    const updateProduct = useCallback(async (data: Omit<Product, "id">) => {
+        setError(null);
+        console.log(data)
         try {
-            const res = await api.put(`/products/${id}`, data)
-            setProduct(res.data)
+            const res = await api.put(`/products/${data.id}`, data);
             setProducts((prev) =>
-                prev.map((p) => (p.id === Number(id) ? res.data : p))
-            )
-            return res.data
+                prev.map((p) => (p.id === data.id ? res.data : p))
+            );
+            return res.data;
         } catch (err: any) {
-            setError("Ürün güncellenirken hata oluştu.")
+            setError(err.message || "Ürün güncellenemedi.");
         }
-    }, [])
+    }, []);
 
-    const deleteProduct = useCallback(
-        async (id: number) => {
-            try {
-                await api.deleteRequest(`/products/${id}`)
-                setProducts((prev) => prev.filter((p) => p.id !== id))
-                if (selectedProduct?.id === id) setSelectedProduct(null)
-            } catch (err: any) {
-                console.error("Error deleting product:", err)
-                setError("Ürün silinirken hata oluştu.")
-            }
-        },
-        [selectedProduct]
-    )
+    // Ürün sil (onaylı)
+    const deleteProduct = useCallback(async (id: number) => {
+        const confirmed = window.confirm("Bu ürünü silmek istediğinize emin misiniz?");
+        if (!confirmed) return;
+
+        setError(null);
+        try {
+            await api.delete(`/products/${id}`);
+            setProducts((prev) => prev.filter((p) => p.id !== id));
+            if (selectedProduct?.id === id) setSelectedProduct(null);
+        } catch (err: any) {
+            setError(err.message || "Ürün silinemedi.");
+        }
+    }, [selectedProduct]);
+
+    // Görsel yükle
+    const uploadImage = useCallback(async (file: File) => {
+        const formData = new FormData();
+        formData.append("file", file);
+
+        try {
+            const res = await api.post("/products/upload-image", formData, {
+                headers: { "Content-Type": "multipart/form-data" }
+            });
+            return res.data.url;
+        } catch (err: any) {
+            setError(err.message || "Görsel yüklenemedi.");
+        }
+    }, []);
 
     useEffect(() => {
-        const now = Date.now()
-        if (now - lastFetchRef.current > 5000) {
-            fetchProducts()
-            lastFetchRef.current = now
-        }
-    }, [fetchProducts])
+        fetchProducts();
+    }, [fetchProducts]);
 
     return {
-        fetchProducts,
-        fetchProduct,
         products,
-        product,
         selectedProduct,
         isLoading,
         error,
-        selectProduct,
-        addProduct,
+        fetchProducts,
+        fetchProduct,
+        createProduct,
         updateProduct,
         deleteProduct,
-    }
+        uploadImage,
+        setSelectedProduct
+    };
 }

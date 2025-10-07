@@ -6,48 +6,85 @@ import Header from "@/components/header";
 import Footer from "@/components/footer";
 import { useRouter } from "next/navigation";
 import Sidebar from "@/components/sidebar";
+import {useProducts} from "@/lib/products";
+import {useCategories} from "@/lib/categories";
 export default function ProductsManagement() {
-    const sampleProducts = [
-        {
-            id: 1,
-            name: "Premium Wireless Headphones",
-            price: 299.99,
-            stock: 45,
-            category: "Electronics",
-            status: "Active",
-            image:
-                "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=150&h=150&fit=crop",
-        },
-        {
-            id: 2,
-            name: "Smart Fitness Watch",
-            price: 199.99,
-            stock: 32,
-            category: "Electronics",
-            status: "Active",
-            image:
-                "https://images.unsplash.com/photo-1544117519-31a4b719223d?w=150&h=150&fit=crop",
-        },
-        {
-            id: 3,
-            name: "Laptop Stand Pro",
-            price: 79.99,
-            stock: 0,
-            category: "Accessories",
-            status: "Out of Stock",
-            image:
-                "https://images.unsplash.com/photo-1527864550417-7fd91fc51a46?w=150&h=150&fit=crop",
-        },
-    ];
-
-    const [products, setProducts] = useState(sampleProducts);
     const [searchTerm, setSearchTerm] = useState("");
-    const [editingProduct, setEditingProduct] = useState(null);
     const [showAddForm, setShowAddForm] = useState(false);
-    const handleDeleteProduct = (id) => {
-        setProducts(products.filter((p) => p.id !== id));
+    const {categories} = useCategories()
+    const {
+        products,
+        deleteProduct,
+        updateProduct,
+        createProduct,
+        uploadImage
+    } = useProducts();
+    const [editingProduct, setEditingProduct] = useState<>(null);
+    const [newProduct, setNewProduct] = useState({
+        name: "",
+        price: 0,
+        description: "",
+        imageFile: null as File | null,
+        imageUrl: "",
+        lower: 0,
+        limited_price: 0,
+        categoryIds: [] as number[]
+    });
+    const handleDeleteProduct = async (id: number) => {
+        await deleteProduct(id);
     };
 
+    // Örnek ekleme
+    const handleCreateProduct = async () => {
+        if (!newProduct.name.trim() || newProduct.price <= 0) return;
+
+        let imageUrl = "";
+        if (newProduct.imageFile) {
+            const uploaded = await uploadImage(newProduct.imageFile);
+            imageUrl = uploaded;
+        }
+        await createProduct({
+            name: newProduct.name,
+            price: newProduct.price,
+            description: newProduct.description,
+            image_url:imageUrl,
+            lower: newProduct.lower,
+            limited_price: newProduct.limited_price,
+            categoryIds: newProduct.categoryIds
+        });
+
+        setShowAddForm(false);
+        setNewProduct({
+            name: "",
+            description: "",
+            price: 0,
+            imageFile: null,
+            imageUrl: "",
+            lower: 0,
+            limited_price: 0,
+            categoryIds: []
+        });
+    };
+    // Örnek güncelleme
+    const handleEditProduct = async () => {
+        if (!editingProduct) return;
+        let imageUrl = editingProduct.image_url;
+        if (editingProduct.imageFile) {
+            const uploaded = await uploadImage(editingProduct.imageFile);
+            if (uploaded) imageUrl = uploaded;
+        }
+        await updateProduct({
+            id : editingProduct.id,
+            name: editingProduct.name,
+            price: editingProduct.price,
+            description: editingProduct.description,
+            image_url:imageUrl,
+            lower: editingProduct.lower,
+            limited_price: editingProduct.limited_price,
+            categoryIds: editingProduct.categoryIds
+        });
+        setEditingProduct(false)
+    };
     return (
         <div>
             <Header />
@@ -126,7 +163,7 @@ export default function ProductsManagement() {
                                                     <div className="flex items-center">
                                                         <img
                                                             className="h-12 w-12 rounded object-cover"
-                                                            src={product.image}
+                                                            src={`http://localhost:8000${product.image_url}`}
                                                             alt={product.name}
                                                         />
                                                         <div className="ml-4">
@@ -140,17 +177,22 @@ export default function ProductsManagement() {
                                                     {product.price}₺
                                                 </td>
                                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                                    {product.stock}
+                                                    {product.lower}
                                                 </td>
                                                 <td className="px-6 py-4 whitespace-nowrap">
-
+                                                    {product.limited_price}
                                                 </td>
                                                 <td>
-                                                    {product.category}
+                                                    {product.categories?.map((c) => c.name).join(", ") || "-"}
                                                 </td>
                                                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
                                                     <button
-                                                        onClick={() => setEditingProduct(product)}
+                                                        onClick={() => {
+                                                            setEditingProduct({
+                                                                ...product,
+                                                                categoryIds: product.categories?.map(c => c.id) || []
+                                                            })
+                                                        }}
                                                         className="text-blue-600 hover:text-blue-900"
                                                     >
                                                         <Edit size={16} />
@@ -173,26 +215,22 @@ export default function ProductsManagement() {
             </div>
 
             {/* Edit Product Modal */}
-            {editingProduct && (
+            {editingProduct &&(
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
                     <div className="bg-white rounded-lg p-6 w-full max-w-md">
                         <h3 className="text-lg font-semibold mb-4">Edit Product</h3>
                         <div className="space-y-4">
                             {/* Product Image */}
                             <div>
-                                <label className="block text-sm font-medium mb-1">Ürün Görseli</label>
+                                <label className="block text-sm font-medium mb-1">Ürün Resmi</label>
                                 <input
                                     type="file"
                                     accept="image/*"
-                                    onChange={(e) =>
-                                        setEditingProduct({
-                                            ...editingProduct,
-                                            image: e.target.files[0], // seçilen dosyayı kaydediyoruz
-                                        })
-                                    }
+                                    onChange={(e) => setEditingProduct({ ...editingProduct, imageFile: e.target.files?.[0] || null })}
                                     className="w-full px-4 py-2 border rounded-lg"
                                 />
                             </div>
+
 
                             {/* Product Name */}
                             <input
@@ -207,7 +245,16 @@ export default function ProductsManagement() {
                                 }
                                 className="w-full px-4 py-2 border rounded-lg"
                             />
-
+                            <div>
+                                <label className="block text-sm font-medium mb-1">Açıklama</label>
+                                <textarea
+                                    placeholder="Ürün hakkında detaylı bilgi..."
+                                    value={editingProduct.description}
+                                    onChange={(e) => setEditingProduct({ ...editingProduct, description: e.target.value })}
+                                    className="w-full px-4 py-2 border rounded-lg"
+                                    rows={4}
+                                />
+                            </div>
                             {/* Price */}
                             <input
                                 type="number"
@@ -226,11 +273,11 @@ export default function ProductsManagement() {
                                 <input
                                     type="number"
                                     placeholder="Toptan İndirim Adeti"
-                                    value={editingProduct.wholesaleMin || ""}
+                                    value={editingProduct.lower || ""}
                                     onChange={(e) =>
                                         setEditingProduct({
                                             ...editingProduct,
-                                            wholesaleMin: parseInt(e.target.value),
+                                            lower: parseInt(e.target.value),
                                         })
                                     }
                                     className="w-full px-4 py-2 border rounded-lg"
@@ -238,11 +285,11 @@ export default function ProductsManagement() {
                                 <input
                                     type="number"
                                     placeholder="Toptan Adet Fiyatı"
-                                    value={editingProduct.wholesalePrice || ""}
+                                    value={editingProduct.limited_price || ""}
                                     onChange={(e) =>
                                         setEditingProduct({
                                             ...editingProduct,
-                                            wholesalePrice: parseFloat(e.target.value),
+                                            limited_price: parseFloat(e.target.value),
                                         })
                                     }
                                     className="w-full px-4 py-2 border rounded-lg"
@@ -253,52 +300,43 @@ export default function ProductsManagement() {
                             <div>
                                 <p className="text-sm font-medium mb-2">Kategoriler</p>
                                 <div className="grid grid-cols-2 gap-2">
-                                    {["Electronics", "Clothing", "Accessories", "Home & Kitchen", "Beauty", "Sports"].map(
-                                        (cat) => (
-                                            <label key={cat} className="flex items-center space-x-2">
-                                                <input
-                                                    type="checkbox"
-                                                    checked={editingProduct.categories?.includes(cat)}
-                                                    onChange={(e) => {
-                                                        let newCategories = editingProduct.categories || [];
-                                                        if (e.target.checked) {
-                                                            newCategories = [...newCategories, cat];
-                                                        } else {
-                                                            newCategories = newCategories.filter((c) => c !== cat);
-                                                        }
-                                                        setEditingProduct({
-                                                            ...editingProduct,
-                                                            categories: newCategories,
-                                                        });
-                                                    }}
-                                                />
-                                                <span>{cat}</span>
-                                            </label>
-                                        )
-                                    )}
+                                    {categories.map((cat) => (
+                                        <label key={cat.id} className="flex items-center space-x-2">
+                                            <input
+                                                type="checkbox"
+                                                value={cat.id}
+                                                checked={editingProduct.categoryIds?.includes(cat.id) || false}
+                                                onChange={(e) => {
+                                                    const id = cat.id;
+                                                    setEditingProduct(prev => ({
+                                                        ...prev,
+                                                        categoryIds: e.target.checked
+                                                            ? [...(prev.categoryIds || []), id]
+                                                            : (prev.categoryIds || []).filter(cid => cid !== id)
+                                                    }));
+                                                }}
+                                                className="form-checkbox"
+                                            />
+                                            <span>{cat.name}</span>
+                                        </label>
+                                    ))}
                                 </div>
-                            </div>
-                        </div>
+                    </div>
+                </div>
 
-                        {/* Buttons */}
-                        <div className="flex space-x-3 mt-6">
-                            <button
-                                onClick={() => {
-                                    const updatedProducts = products.map((p) =>
-                                        p.id === editingProduct.id ? editingProduct : p
-                                    );
-                                    setProducts(updatedProducts);
-                                    setEditingProduct(null);
-                                }}
-                                className="flex-1 bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 flex items-center justify-center"
-                            >
-                                <Save size={16} className="mr-2" />
-                                Kaydet
-                            </button>
-                            <button
-                                onClick={() => setEditingProduct(null)}
-                                className="flex-1 bg-gray-500 text-white py-2 rounded-lg hover:bg-gray-600 flex items-center justify-center"
-                            >
+            {/* Buttons */}
+            <div className="flex space-x-3 mt-6">
+                <button
+                    onClick={handleEditProduct}
+                    className="flex-1 bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 flex items-center justify-center"
+                >
+                    <Save size={16} className="mr-2"/>
+                    Kaydet
+                </button>
+                <button
+                    onClick={() => setEditingProduct(null)}
+                    className="flex-1 bg-gray-500 text-white py-2 rounded-lg hover:bg-gray-600 flex items-center justify-center"
+                >
                                 <X size={16} className="mr-2" />
                                 İptal
                             </button>
@@ -319,6 +357,7 @@ export default function ProductsManagement() {
                                 <input
                                     type="file"
                                     accept="image/*"
+                                    onChange={(e) => setNewProduct({ ...newProduct, imageFile: e.target.files?.[0] || null })}
                                     className="w-full px-4 py-2 border rounded-lg"
                                 />
                             </div>
@@ -327,39 +366,82 @@ export default function ProductsManagement() {
                             <input
                                 type="text"
                                 placeholder="Ürün Adı"
+                                value={newProduct.name}
+                                onChange={(e) => setNewProduct({ ...newProduct, name: e.target.value })}
                                 className="w-full px-4 py-2 border rounded-lg"
                             />
-
-                            {/* Price */}
+                            <div>
+                                <label className="block text-sm font-medium mb-1">Açıklama</label>
+                                <textarea
+                                    placeholder="Ürün hakkında detaylı bilgi..."
+                                    value={newProduct.description}
+                                    onChange={(e) => setNewProduct({ ...newProduct, description: e.target.value })}
+                                    className="w-full px-4 py-2 border rounded-lg"
+                                    rows={4}
+                                />
+                            </div>
                             <input
                                 type="number"
                                 placeholder="Fiyat"
+                                value={newProduct.price}
+                                onChange={(e) => setNewProduct({ ...newProduct, price: parseFloat(e.target.value) })}
                                 className="w-full px-4 py-2 border rounded-lg"
                             />
 
                             {/* Wholesale Discount */}
                             <div className="grid grid-cols-2 gap-3">
-                                <input
-                                    type="number"
-                                    placeholder="Toptan Alt Sınırı"
-                                    className="w-full px-4 py-2 border rounded-lg"
-                                />
-                                <input
-                                    type="number"
-                                    placeholder="Toptan Adet Fiyatı"
-                                    className="w-full px-4 py-2 border rounded-lg"
-                                />
+                                {/* Toptan Alt Sınırı */}
+                                <div>
+                                    <label className="block text-sm font-medium mb-1">Toptan Alt Sınırı</label>
+                                    <input
+                                        type="number"
+                                        placeholder="Örn: 100"
+                                        value={newProduct.lower}
+                                        onChange={(e) =>
+                                            setNewProduct({ ...newProduct, lower: parseInt(e.target.value) })
+                                        }
+                                        className="w-full px-4 py-2 border rounded-lg"
+                                    />
+                                </div>
+
+                                {/* Toptan Adet Fiyatı */}
+                                <div>
+                                    <label className="block text-sm font-medium mb-1">Toptan Adet Fiyatı</label>
+                                    <input
+                                        type="number"
+                                        placeholder="Örn: 89.90"
+                                        value={newProduct.limited_price}
+                                        onChange={(e) =>
+                                            setNewProduct({ ...newProduct, limited_price: parseFloat(e.target.value) })
+                                        }
+                                        className="w-full px-4 py-2 border rounded-lg"
+                                    />
+                                </div>
                             </div>
 
                             {/* Categories with Checkboxes */}
                             <div>
                                 <p className="text-sm font-medium mb-2">Kategoriler</p>
                                 <div className="grid grid-cols-2 gap-2">
-                                    {["Electronics", "Clothing", "Accessories", "Home & Kitchen", "Beauty", "Sports"].map(
+                                    {categories.map(
                                         (cat) => (
-                                            <label key={cat} className="flex items-center space-x-2">
-                                                <input type="checkbox" value={cat} className="form-checkbox" />
-                                                <span>{cat}</span>
+                                            <label key={cat.id} className="flex items-center space-x-2">
+                                                <input
+                                                    type="checkbox"
+                                                    value={cat.id}
+                                                    checked={newProduct.categoryIds.includes(cat.id)}
+                                                    onChange={(e) => {
+                                                        const id = parseInt(e.target.value);
+                                                        setNewProduct((prev) => ({
+                                                            ...prev,
+                                                            categoryIds: e.target.checked
+                                                                ? [...prev.categoryIds, id]
+                                                                : prev.categoryIds.filter((cid) => cid !== id)
+                                                        }));
+                                                    }}
+                                                    className="form-checkbox"
+                                                />
+                                                <span>{cat.name}</span>
                                             </label>
                                         )
                                     )}
@@ -370,7 +452,7 @@ export default function ProductsManagement() {
                         {/* Buttons */}
                         <div className="flex space-x-3 mt-6">
                             <button
-                                onClick={() => setShowAddForm(false)}
+                                onClick={handleCreateProduct}
                                 className="flex-1 bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 flex items-center justify-center"
                             >
                                 <Save size={16} className="mr-2" />

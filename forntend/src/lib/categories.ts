@@ -17,7 +17,7 @@ export function useCategories() {
         setIsLoading(true);
         setError(null);
         try {
-            const res = await api.get("/kategories");
+            const res = await api.get("/categories");
             setCategories(res.data);
         } catch (err: any) {
             setError(err.message || "Kategoriler alınamadı.");
@@ -31,7 +31,7 @@ export function useCategories() {
         setIsLoading(true);
         setError(null);
         try {
-            const res = await api.get(`/kategories/${id}`);
+            const res = await api.get(`/categories/${id}`);
             setSelectedCategory(res.data);
         } catch (err: any) {
             setError(err.message || "Kategori alınamadı.");
@@ -42,7 +42,7 @@ export function useCategories() {
     const updateCategory = useCallback(async (id: number, name: string) => {
         setError(null);
         try {
-            const res = await api.put(`/kategories/${id}`, { name });
+            const res = await api.put(`/categories/${id}`, { name });
             setCategories((prev) =>
                 prev.map((cat) => (cat.id === id ? res.data : cat))
             );
@@ -55,7 +55,7 @@ export function useCategories() {
     const createCategory = useCallback(async (name: string) => {
         setError(null);
         try {
-            const res = await api.post("/kategories", { name });
+            const res = await api.post("/categories", { name });
             setCategories((prev) => [...prev, res.data]);
             return res.data;
         } catch (err: any) {
@@ -67,7 +67,7 @@ export function useCategories() {
     const deleteCategory = useCallback(async (id: number) => {
         setError(null);
         try {
-            await api.delete(`/kategories/${id}`);
+            await api.delete(`/categories/${id}`);
             setCategories((prev) => prev.filter((cat) => cat.id !== id));
             if (selectedCategory?.id === id) setSelectedCategory(null);
         } catch (err: any) {

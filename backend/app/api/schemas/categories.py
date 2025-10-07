@@ -1,12 +1,13 @@
 from pydantic import BaseModel
 
-class KategoriesBase(BaseModel):
+class CategoriesBase(BaseModel):
+    id : int
     name: str
 
-class KategoriesCreate(KategoriesBase):
+class CategoriesCreate(CategoriesBase):
     pass
 
-class KategoriesRead(KategoriesBase):
+class CategoriesRead(CategoriesBase):
     id: int
 
     model_config = {"from_attributes": True}  # v2 uyumlu
