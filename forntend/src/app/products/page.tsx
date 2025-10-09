@@ -5,23 +5,18 @@ import { Star } from "lucide-react";
 import Header from "@/components/header";
 import Footer from "@/components/footer";
 import { useRouter } from "next/navigation";
+import {useCategories} from "@/lib/categories";
+import {useProducts} from "@/lib/products";
+import {useCart} from "@/lib/cart";
 
 export default function ProductsPage() {
     const router = useRouter();
     const [searchTerm, setSearchTerm] = useState("");
     const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
-    const [priceRange, setPriceRange] = useState([0, 1000]);
-
-    const categories = ["Elektronik", "Aksesuar", "Sağlık", "Ofis"];
-
-    const products = [
-        { id: 1, name: "Kablosuz Premium Kulaklık", price: 299.99, image: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=400&h=400&fit=crop", rating: 4.8, reviews: 124, description: "Kristal netliğinde ses deneyimi sunan premium kablosuz kulaklık. Aktif gürültü engelleme, 30 saat batarya ömrü ve konforlu yastıklar.", inStock: true, category: "Elektronik" },
-        { id: 2, name: "Akıllı Fitness Saati", price: 199.99, image: "https://images.unsplash.com/photo-1544117519-31a4b719223d?w=400&h=400&fit=crop", rating: 4.6, reviews: 89, description: "Gelişmiş akıllı saat ile fitness hedeflerinizi takip edin.", inStock: true, category: "Sağlık" },
-        { id: 3, name: "Laptop Stand Pro", price: 79.99, image: "https://images.unsplash.com/photo-1527864550417-7fd91fc51a46?w=400&h=400&fit=crop", rating: 4.7, reviews: 156, description: "Ergonomik alüminyum laptop standı.", inStock: false, category: "Aksesuar" },
-        // diğer ürünler...
-    ];
-
-    // Kategori checkbox toggle
+    const [priceRange, setPriceRange] = useState([0, 10000]);
+    const {categories} = useCategories()
+    const {products} = useProducts()
+    const {addToCart} = useCart()
     const toggleCategory = (category: string) => {
         if (selectedCategories.includes(category)) {
             setSelectedCategories(selectedCategories.filter(c => c !== category));
@@ -29,14 +24,16 @@ export default function ProductsPage() {
             setSelectedCategories([...selectedCategories, category]);
         }
     };
-
-    // Filtreleme
     const filteredProducts = products.filter(product => {
         const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase());
-        const matchesCategory = selectedCategories.length === 0 || selectedCategories.includes(product.category);
+        const productCategoryNames = product.categories?.map(c => c.name) || [];
+        const matchesCategory =
+            selectedCategories.length === 0 ||
+            selectedCategories.some(cat => productCategoryNames.includes(cat));
         const matchesPrice = product.price >= priceRange[0] && product.price <= priceRange[1];
         return matchesSearch && matchesCategory && matchesPrice;
     });
+
 
     return (
         <div>
@@ -64,11 +61,11 @@ export default function ProductsPage() {
                             <label key={idx} className="flex items-center gap-2 mb-1 cursor-pointer">
                                 <input
                                     type="checkbox"
-                                    checked={selectedCategories.includes(cat)}
-                                    onChange={() => toggleCategory(cat)}
+                                    checked={selectedCategories.includes(cat.name)}
+                                    onChange={() => toggleCategory(cat.name)}
                                     className="w-4 h-4"
                                 />
-                                <span>{cat}</span>
+                                <span>{cat.name}</span>
                             </label>
                         ))}
                     </div>
@@ -89,7 +86,7 @@ export default function ProductsPage() {
                             <input
                                 type="range"
                                 min={0}
-                                max={1000}
+                                max={10000}
                                 value={priceRange[0]}
                                 onChange={(e) => setPriceRange([Number(e.target.value), priceRange[1]])}
                                 className="flex-1"
@@ -109,7 +106,7 @@ export default function ProductsPage() {
                             <input
                                 type="range"
                                 min={0}
-                                max={1000}
+                                max={10000}
                                 value={priceRange[1]}
                                 onChange={(e) => setPriceRange([priceRange[0], Number(e.target.value)])}
                                 className="flex-1"
@@ -132,30 +129,27 @@ export default function ProductsPage() {
                                 className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow"
                             >
                                 <img
-                                    src={product.image}
+                                    src={`http://localhost:8000${product.image_url}`}
                                     alt={product.name}
                                     className="w-full h-48 object-cover"
                                 />
                                 <div className="p-6">
                                     <h3 className="font-semibold text-lg mb-2">{product.name}</h3>
                                     <div className="flex items-center mb-2">
-                                        <div className="flex text-yellow-400">
+                                        <div className="flex text-yellow-400 mr-2">
                                             {[...Array(5)].map((_, i) => (
                                                 <Star
                                                     key={i}
                                                     size={16}
-                                                    fill={i < Math.floor(product.rating) ? "currentColor" : "none"}
+                                                    fill={i < Math.floor(product.star_avg) ? "currentColor" : "none"}
                                                 />
                                             ))}
                                         </div>
-                                        <span className="text-gray-600 text-sm ml-2">({product.reviews})</span>
+                                        <span> {product.star_count}</span>
                                     </div>
                                     <p className="text-gray-600 text-sm mb-4 line-clamp-2">{product.description}</p>
                                     <div className="flex items-center justify-between mb-4">
                                         <span className="text-2xl font-bold text-blue-600">{product.price}₺</span>
-                                        <span className={`px-2 py-1 rounded text-xs ${product.inStock ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}`}>
-                                            {product.inStock ? "Stokta" : "Stokta Yok"}
-                                        </span>
                                     </div>
                                     <div className="space-y-2">
                                         <button
@@ -164,14 +158,12 @@ export default function ProductsPage() {
                                         >
                                             Detayları Gör
                                         </button>
-                                        {product.inStock && (
                                             <button
-                                                onClick={() => alert(`${product.name} sepete eklendi.`)}
+                                                onClick={() => addToCart(product)}
                                                 className="w-full bg-gray-100 text-gray-800 py-2 rounded-lg hover:bg-gray-200 transition-colors"
                                             >
                                                 Sepete Ekle
                                             </button>
-                                        )}
                                     </div>
                                 </div>
                             </div>

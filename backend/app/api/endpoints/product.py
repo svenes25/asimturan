@@ -2,6 +2,7 @@ import logging
 import os
 
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 from starlette.responses import JSONResponse
 
@@ -9,6 +10,7 @@ from ..database import get_db
 from ..models.categories import Categories
 from ..models.product import Product
 from ..models.product_categories import ProductCategories
+from ..models.product_stars import ProductStars
 from ..schemas.product import ProductCreate, ProductRead, ProductBase
 
 router = APIRouter(prefix="/products", tags=["products"])
@@ -17,8 +19,25 @@ router = APIRouter(prefix="/products", tags=["products"])
 def get_products(db: Session = Depends(get_db)):
     products = db.query(Product).all()
     result = []
+
     for p in products:
-        category_rows = db.query(Categories).join(ProductCategories).filter(ProductCategories.product_id == p.id).all()
+        category_rows = (
+            db.query(Categories)
+            .join(ProductCategories)
+            .filter(ProductCategories.product_id == p.id)
+            .all()
+        )
+
+        # Yıldız sayısı ve ortalama
+        stars_data = (
+            db.query(
+                func.count(ProductStars.id).label("star_count"),
+                func.avg(ProductStars.stars).label("star_avg"),
+            )
+            .filter(ProductStars.product_id == p.id)
+            .first()
+        )
+
         result.append({
             "id": p.id,
             "name": p.name,
@@ -29,8 +48,11 @@ def get_products(db: Session = Depends(get_db)):
             "image_url": p.image_url,
             "created_at": p.created_at,
             "updated_at": p.updated_at,
-            "categories": category_rows
+            "categories": category_rows,
+            "star_count": stars_data.star_count or 0,
+            "star_avg": round(float(stars_data.star_avg), 2) if stars_data.star_avg else 0.0
         })
+
     return result
 
 # Tek ürün getir

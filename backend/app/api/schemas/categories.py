@@ -1,7 +1,6 @@
 from pydantic import BaseModel
 
 class CategoriesBase(BaseModel):
-    id : int
     name: str
 
 class CategoriesCreate(CategoriesBase):
@@ -9,5 +8,6 @@ class CategoriesCreate(CategoriesBase):
 
 class CategoriesRead(CategoriesBase):
     id: int
+    product_count : int
 
     model_config = {"from_attributes": True}  # v2 uyumlu

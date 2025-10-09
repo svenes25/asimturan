@@ -112,7 +112,7 @@ export default function CategoryManagement() {
                                                     {category.name}
                                                 </td>
                                                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-
+                                                    {category.product_count}
                                                 </td>
                                                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium flex gap-3">
                                                     <button

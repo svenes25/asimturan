@@ -17,7 +17,7 @@ export default function ProductDetailPage() {
     // Örnek veri — Gerçekte API veya veritabanından çekeceksin
     const products = [
         {
-            id: 1,
+            id: 11,
             name: "Premium Kablosuz Kulaklık",
             price: 299.99,
             image: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=400&h=400&fit=crop",

@@ -1,48 +1,32 @@
 "use client";
 import Link from "next/link";
 import { ShoppingCart, Minus, Plus, User, MapPin, Menu, X } from "lucide-react";
-import React, { useState } from "react";
+import React, {useEffect, useState} from "react";
+import {useCart} from "@/lib/cart";
 
 export default function Header({ user }) {
     const [userMenuOpen, setUserMenuOpen] = useState(false);
-    const [cartOpen, setCartOpen] = useState(false);
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-    const [cart, setCart] = useState([]);
+    const { cart, updateQuantity, getTotalItems, getTotalPrice, setCart} = useCart();
+    const [cartOpen, setCartOpen] = useState(false);
+    useEffect(() => {
+        const onCartUpdated = (e: Event) => {
+            const detail = (e as CustomEvent).detail;
+            if (detail) setCart(detail);
+        };
+        const onStorage = (e: StorageEvent) => {
+            if (e.key === "cart_sync" && e.newValue) {
+                try { setCart(JSON.parse(e.newValue)); } catch { /* ignore */ }
+            }
+        };
 
-    const getTotalItems = () =>
-        cart.reduce((total, item) => total + item.quantity, 0);
-    const getTotalPrice = () =>
-        cart
-            .reduce((total, item) => total + item.price * item.quantity, 0)
-            .toFixed(2);
-
-    const addToCart = (product, quantity = 1) => {
-        const existingItem = cart.find((item) => item.id === product.id);
-        if (existingItem) {
-            setCart(
-                cart.map((item) =>
-                    item.id === product.id
-                        ? { ...item, quantity: item.quantity + quantity }
-                        : item
-                )
-            );
-        } else {
-            setCart([...cart, { ...product, quantity }]);
-        }
-    };
-
-    const removeFromCart = (productId) =>
-        setCart(cart.filter((item) => item.id !== productId));
-
-    const updateQuantity = (productId, newQuantity) => {
-        if (newQuantity === 0) removeFromCart(productId);
-        else
-            setCart(
-                cart.map((item) =>
-                    item.id === productId ? { ...item, quantity: newQuantity } : item
-                )
-            );
-    };
+        window.addEventListener("cart:updated", onCartUpdated);
+        window.addEventListener("storage", onStorage);
+        return () => {
+            window.removeEventListener("cart:updated", onCartUpdated);
+            window.removeEventListener("storage", onStorage);
+        };
+    }, [setCart]);
 
     return (
         <div className="bg-white shadow-md sticky top-0 z-50">
@@ -141,18 +125,15 @@ export default function Header({ user }) {
                                 className="flex items-center space-x-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
                             >
                                 <ShoppingCart size={20} />
-                                <span>{getTotalItems()}</span>
+                                <span>{getTotalItems()}</span> {/* This will update instantly */}
                             </button>
+
                             {cartOpen && (
                                 <div className="absolute right-0 mt-2 w-80 bg-white border border-gray-200 rounded-lg shadow-xl z-50">
                                     <div className="p-4">
-                                        <h3 className="font-semibold text-lg mb-4">
-                                            Sepetim
-                                        </h3>
+                                        <h3 className="font-semibold text-lg mb-4">Sepetim</h3>
                                         {cart.length === 0 ? (
-                                            <p className="text-gray-500">
-                                                Sepetiniz boş
-                                            </p>
+                                            <p className="text-gray-500">Sepetiniz boş</p>
                                         ) : (
                                             <>
                                                 {cart.map((item) => (
@@ -161,39 +142,15 @@ export default function Header({ user }) {
                                                         className="flex items-center justify-between py-2 border-b"
                                                     >
                                                         <div className="flex-1">
-                                                            <h4 className="font-medium text-sm">
-                                                                {item.name}
-                                                            </h4>
-                                                            <p className="text-gray-600 text-sm">
-                                                                {item.price}₺
-                                                            </p>
+                                                            <h4 className="font-medium text-sm">{item.name}</h4>
+                                                            <p className="text-gray-600 text-sm">{item.price}₺</p>
                                                         </div>
                                                         <div className="flex items-center space-x-2">
-                                                            <button
-                                                                onClick={() =>
-                                                                    updateQuantity(
-                                                                        item.id,
-                                                                        item.quantity -
-                                                                        1
-                                                                    )
-                                                                }
-                                                                className="w-6 h-6 flex items-center justify-center bg-gray-200 rounded"
-                                                            >
+                                                            <button onClick={() => updateQuantity(item.id, item.quantity - 1)} className="w-6 h-6 flex items-center justify-center bg-gray-200 rounded">
                                                                 <Minus size={12} />
                                                             </button>
-                                                            <span className="w-8 text-center">
-                                                                {item.quantity}
-                                                            </span>
-                                                            <button
-                                                                onClick={() =>
-                                                                    updateQuantity(
-                                                                        item.id,
-                                                                        item.quantity +
-                                                                        1
-                                                                    )
-                                                                }
-                                                                className="w-6 h-6 flex items-center justify-center bg-gray-200 rounded"
-                                                            >
+                                                            <span className="w-8 text-center">{item.quantity}</span>
+                                                            <button onClick={() => updateQuantity(item.id, item.quantity + 1)} className="w-6 h-6 flex items-center justify-center bg-gray-200 rounded">
                                                                 <Plus size={12} />
                                                             </button>
                                                         </div>
@@ -201,10 +158,7 @@ export default function Header({ user }) {
                                                 ))}
                                                 <div className="mt-4 pt-4 border-t">
                                                     <div className="flex justify-between font-semibold">
-                                                        <span>
-                                                            Toplam: {getTotalPrice()}
-                                                            ₺
-                                                        </span>
+                                                        <span>Toplam: {getTotalPrice()}₺</span>
                                                     </div>
                                                     <button className="w-full mt-2 bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700">
                                                         Satın Al
@@ -216,7 +170,6 @@ export default function Header({ user }) {
                                 </div>
                             )}
                         </div>
-
                         {/* Mobil Menü Butonu */}
                         <div className="md:hidden">
                             <button

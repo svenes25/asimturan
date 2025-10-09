@@ -19,7 +19,7 @@ export default function ProductsManagement() {
         createProduct,
         uploadImage
     } = useProducts();
-    const [editingProduct, setEditingProduct] = useState<>(null);
+    const [editingProduct, setEditingProduct] = useState<null>(null);
     const [newProduct, setNewProduct] = useState({
         name: "",
         price: 0,
@@ -173,14 +173,14 @@ export default function ProductsManagement() {
                                                         </div>
                                                     </div>
                                                 </td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                                <td>
                                                     {product.price}₺
                                                 </td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                                <td>
                                                     {product.lower}
                                                 </td>
-                                                <td className="px-6 py-4 whitespace-nowrap">
-                                                    {product.limited_price}
+                                                <td>
+                                                    {product.limited_price}₺
                                                 </td>
                                                 <td>
                                                     {product.categories?.map((c) => c.name).join(", ") || "-"}
@@ -305,14 +305,14 @@ export default function ProductsManagement() {
                                             <input
                                                 type="checkbox"
                                                 value={cat.id}
-                                                checked={editingProduct.categoryIds?.includes(cat.id) || false}
+                                                checked={editingProduct?.categoryIds?.includes(cat.id) || false}
                                                 onChange={(e) => {
                                                     const id = cat.id;
-                                                    setEditingProduct(prev => ({
-                                                        ...prev,
+                                                    setEditingProduct((prev) => ({
+                                                        ...prev!,
                                                         categoryIds: e.target.checked
-                                                            ? [...(prev.categoryIds || []), id]
-                                                            : (prev.categoryIds || []).filter(cid => cid !== id)
+                                                            ? [...(prev?.categoryIds || []), id]
+                                                            : prev!.categoryIds.filter((cid) => cid !== id)
                                                     }));
                                                 }}
                                                 className="form-checkbox"
