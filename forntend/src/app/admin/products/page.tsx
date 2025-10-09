@@ -1,7 +1,7 @@
 "use client";
 
 import {Edit, Plus, Save, Search, Trash2, X, Package, BarChart3, Tag, Users, Mail, Truck, Phone} from "lucide-react";
-import React, { useState } from "react";
+import React, {useEffect, useState} from "react";
 import Header from "@/components/header";
 import Footer from "@/components/footer";
 import { useRouter } from "next/navigation";
@@ -13,7 +13,7 @@ export default function ProductsManagement() {
     const [showAddForm, setShowAddForm] = useState(false);
     const {categories} = useCategories()
     const {
-        products,
+        productsRead:products,
         deleteProduct,
         updateProduct,
         createProduct,
@@ -33,7 +33,6 @@ export default function ProductsManagement() {
     const handleDeleteProduct = async (id: number) => {
         await deleteProduct(id);
     };
-
     // Örnek ekleme
     const handleCreateProduct = async () => {
         if (!newProduct.name.trim() || newProduct.price <= 0) return;
@@ -315,7 +314,6 @@ export default function ProductsManagement() {
                                                             : prev!.categoryIds.filter((cid) => cid !== id)
                                                     }));
                                                 }}
-                                                className="form-checkbox"
                                             />
                                             <span>{cat.name}</span>
                                         </label>

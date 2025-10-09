@@ -1,27 +1,46 @@
 "use client";
 
-import React, { useState } from "react";
+import React, {useEffect, useState} from "react";
 import { Star } from "lucide-react";
 import Header from "@/components/header";
 import Footer from "@/components/footer";
-import { useRouter } from "next/navigation";
+import {useRouter, useSearchParams} from "next/navigation";
 import {useCategories} from "@/lib/categories";
 import {useProducts} from "@/lib/products";
 import {useCart} from "@/lib/cart";
 
 export default function ProductsPage() {
     const router = useRouter();
+    const searchParams = useSearchParams();
     const [searchTerm, setSearchTerm] = useState("");
     const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
     const [priceRange, setPriceRange] = useState([0, 10000]);
-    const {categories} = useCategories()
-    const {productsStars:products} = useProducts()
-    const {addToCart} = useCart()
-    const toggleCategory = (category: string) => {
-        if (selectedCategories.includes(category)) {
-            setSelectedCategories(selectedCategories.filter(c => c !== category));
+    const { categories } = useCategories();
+    const { productsStars: products } = useProducts();
+    const { addToCart } = useCart();
+    useEffect(() => {
+        const categoryFromUrl = searchParams.get("category");
+        if (categoryFromUrl) {
+            const categoryObj = categories.find(c => c.id === parseInt(categoryFromUrl));
+            if (categoryObj) setSelectedCategories([categoryObj.name]);
         } else {
-            setSelectedCategories([...selectedCategories, category]);
+            setSelectedCategories([]);
+        }
+    }, [searchParams, categories]);
+    const toggleCategory = (categoryName: string, categoryId: number) => {
+        let updatedCategories: string[];
+        if (selectedCategories.includes(categoryName)) {
+            updatedCategories = selectedCategories.filter(c => c !== categoryName);
+        } else {
+            updatedCategories = [...selectedCategories, categoryName];
+        }
+        setSelectedCategories(updatedCategories);
+
+        // URL güncelle
+        if (updatedCategories.length === 0) {
+            router.push("/products");
+        } else {
+            router.push(`/products?category=${categoryId}`);
         }
     };
     const filteredProducts = products.filter(product => {
@@ -33,8 +52,6 @@ export default function ProductsPage() {
         const matchesPrice = product.price >= priceRange[0] && product.price <= priceRange[1];
         return matchesSearch && matchesCategory && matchesPrice;
     });
-
-
     return (
         <div>
             <Header />

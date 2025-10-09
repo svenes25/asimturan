@@ -4,67 +4,70 @@ import Header from "@/components/header";
 import Footer from "@/components/footer";
 import { useRouter } from "next/navigation";
 import React from "react";
+import {useCategories} from "@/lib/categories";
+import {useProducts} from "@/lib/products";
 
 export default function HomePage() {
     const router = useRouter();
+    const {categories} = useCategories()
+    // const categories = [
+    //     { id: 1, name: "Kâğıt Ürünleri", image: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=400&h=400&fit=crop" },
+    //     { id: 2, name: "Ambalaj Ürünleri", image: "https://images.unsplash.com/photo-1586953208448-b95a79798f07?w=400&h=400&fit=crop" },
+    //     { id: 3, name: "Temizlik Ürünleri", image: "https://images.unsplash.com/photo-1527864550417-7fd91fc51a46?w=400&h=400&fit=crop" },
+    // ];
 
-    const categories = [
-        { id: 1, name: "Kâğıt Ürünleri", image: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=400&h=400&fit=crop" },
-        { id: 2, name: "Ambalaj Ürünleri", image: "https://images.unsplash.com/photo-1586953208448-b95a79798f07?w=400&h=400&fit=crop" },
-        { id: 3, name: "Temizlik Ürünleri", image: "https://images.unsplash.com/photo-1527864550417-7fd91fc51a46?w=400&h=400&fit=crop" },
-    ];
-
-    const products = [
-        {
-            id: 1,
-            name: "Premium Wireless Headphones",
-            price: 299.99,
-            image: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=400&h=400&fit=crop",
-            rating: 4.8,
-            reviews: 124,
-            description: "Kristal net ses kalitesi sunan premium kablosuz kulaklık. Aktif gürültü engelleme, 30 saat pil ömrü, konforlu kulak yastıkları.",
-            features: ["Aktif Gürültü Engelleme", "30 saat pil", "Bluetooth 5.0", "Hızlı şarj (15dk = 3sa)"],
-            inStock: true,
-            sold: 150
-        },
-        {
-            id: 2,
-            name: "Smart Fitness Watch",
-            price: 199.99,
-            image: "https://images.unsplash.com/photo-1544117519-31a4b719223d?w=400&h=400&fit=crop",
-            rating: 4.6,
-            reviews: 89,
-            description: "Fitness hedeflerinizi takip edin. Kalp ritmi izleme, GPS, 7 gün pil ömrü.",
-            features: ["Kalp ritmi ölçer", "GPS takibi", "Su geçirmez", "7 gün pil"],
-            inStock: true,
-            sold: 220
-        },
-        {
-            id: 3,
-            name: "Laptop Stand Pro",
-            price: 79.99,
-            image: "https://images.unsplash.com/photo-1527864550417-7fd91fc51a46?w=400&h=400&fit=crop",
-            rating: 4.7,
-            reviews: 156,
-            description: "Ergonomik alüminyum laptop standı. Yükseklik ve açı ayarlı.",
-            features: ["Alüminyum yapı", "Ayarlanabilir yükseklik", "Isı dağılımı", "Taşınabilir"],
-            inStock: false,
-            sold: 90
-        },
-        {
-            id: 4,
-            name: "Wireless Charging Pad",
-            price: 49.99,
-            image: "https://images.unsplash.com/photo-1586953208448-b95a79798f07?w=400&h=400&fit=crop",
-            rating: 4.4,
-            reviews: 67,
-            description: "Hızlı kablosuz şarj pad’i. LED gösterge ve kaymaz yüzey.",
-            features: ["Hızlı şarj", "Qi uyumlu", "LED gösterge", "Kaymaz yüzey"],
-            inStock: true,
-            sold: 180
-        }
-    ];
-
+    // const products = [
+    //     {
+    //         id: 1,
+    //         name: "Premium Wireless Headphones",
+    //         price: 299.99,
+    //         image: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=400&h=400&fit=crop",
+    //         rating: 4.8,
+    //         reviews: 124,
+    //         description: "Kristal net ses kalitesi sunan premium kablosuz kulaklık. Aktif gürültü engelleme, 30 saat pil ömrü, konforlu kulak yastıkları.",
+    //         features: ["Aktif Gürültü Engelleme", "30 saat pil", "Bluetooth 5.0", "Hızlı şarj (15dk = 3sa)"],
+    //         inStock: true,
+    //         sold: 150,
+    //         categories:5,
+    //     },
+    //     {
+    //         id: 2,
+    //         name: "Smart Fitness Watch",
+    //         price: 199.99,
+    //         image: "https://images.unsplash.com/photo-1544117519-31a4b719223d?w=400&h=400&fit=crop",
+    //         rating: 4.6,
+    //         reviews: 89,
+    //         description: "Fitness hedeflerinizi takip edin. Kalp ritmi izleme, GPS, 7 gün pil ömrü.",
+    //         features: ["Kalp ritmi ölçer", "GPS takibi", "Su geçirmez", "7 gün pil"],
+    //         inStock: true,
+    //         sold: 220
+    //     },
+    //     {
+    //         id: 3,
+    //         name: "Laptop Stand Pro",
+    //         price: 79.99,
+    //         image: "https://images.unsplash.com/photo-1527864550417-7fd91fc51a46?w=400&h=400&fit=crop",
+    //         rating: 4.7,
+    //         reviews: 156,
+    //         description: "Ergonomik alüminyum laptop standı. Yükseklik ve açı ayarlı.",
+    //         features: ["Alüminyum yapı", "Ayarlanabilir yükseklik", "Isı dağılımı", "Taşınabilir"],
+    //         inStock: false,
+    //         sold: 90
+    //     },
+    //     {
+    //         id: 4,
+    //         name: "Wireless Charging Pad",
+    //         price: 49.99,
+    //         image: "https://images.unsplash.com/photo-1586953208448-b95a79798f07?w=400&h=400&fit=crop",
+    //         rating: 4.4,
+    //         reviews: 67,
+    //         description: "Hızlı kablosuz şarj pad’i. LED gösterge ve kaymaz yüzey.",
+    //         features: ["Hızlı şarj", "Qi uyumlu", "LED gösterge", "Kaymaz yüzey"],
+    //         inStock: true,
+    //         sold: 180
+    //     }
+    // ];
+    const {productsRead:products} = useProducts()
     const topSellingProducts = [...products].sort((a, b) => b.sold - a.sold);
     const topRatedProducts = [...products].sort((a, b) => b.rating - a.rating);
 
@@ -84,22 +87,28 @@ export default function HomePage() {
                 <div className="container mx-auto px-4">
                     <h2 className="text-3xl font-bold text-center mb-12">Popüler Kategoriler</h2>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                        {categories.map(cat => (
-                            <div
-                                key={cat.id}
-                                className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg cursor-pointer"
-                                onClick={() => router.push(`/products?category=${cat.id}`)}
-                            >
-                                <img
-                                    src={cat.image}
-                                    alt={cat.name}
-                                    className="w-full h-48 object-cover"
-                                />
-                                <div className="p-6 text-center">
-                                    <h3 className="text-xl font-semibold">{cat.name}</h3>
+                        {categories.map(cat => {
+                            // Kategoriye ait ürünleri filtrele
+                            const productForCategory = products.find(p =>
+                                p.categories?.some(c => c.name === cat.name)
+                            );
+                            return (
+                                <div
+                                    key={cat.id}
+                                    className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg cursor-pointer"
+                                    onClick={() => router.push(`/products?category=${cat.id}`)}
+                                >
+                                    <img
+                                        src={`http://localhost:8000${productForCategory?.image_url}`}
+                                        alt={cat.name}
+                                        className="w-full h-48 object-cover"
+                                    />
+                                    <div className="p-6 text-center">
+                                        <h3 className="text-xl font-semibold">{cat.name}</h3>
+                                    </div>
                                 </div>
-                            </div>
-                        ))}
+                            );
+                        })}
                     </div>
                 </div>
             </section>
@@ -112,7 +121,7 @@ export default function HomePage() {
                         {topSellingProducts.slice(0, 3).map(product => (
                             <div key={product.id} className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow">
                                 <img
-                                    src={product.image}
+                                    src={`http://localhost:8000${product?.image_url}`}
                                     alt={product.name}
                                     className="w-full h-48 object-cover"
                                 />
@@ -146,7 +155,7 @@ export default function HomePage() {
                         {topRatedProducts.slice(0, 3).map(product => (
                             <div key={product.id} className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow">
                                 <img
-                                    src={product.image}
+                                    src={`http://localhost:8000${product?.image_url}`}
                                     alt={product.name}
                                     className="w-full h-48 object-cover"
                                 />
@@ -183,7 +192,7 @@ export default function HomePage() {
                         {topRatedProducts.slice(0, 3).map(product => (
                             <div key={product.id} className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow">
                                 <img
-                                    src={product.image}
+                                    src={`http://localhost:8000${product?.image_url}`}
                                     alt={product.name}
                                     className="w-full h-48 object-cover"
                                 />
