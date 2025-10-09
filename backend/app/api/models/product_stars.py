@@ -1,7 +1,7 @@
 from sqlalchemy import Column, Integer, ForeignKey, CheckConstraint
 from ..database import Base
 
-class ProductStars(Base):
+class ProductStarsModel(Base):
     __tablename__ = "product_stars"
     id = Column(Integer, primary_key=True, index=True)
     product_id = Column(Integer, ForeignKey("product.id", ondelete="CASCADE"), nullable=False)

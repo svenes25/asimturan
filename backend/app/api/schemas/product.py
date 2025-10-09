@@ -18,7 +18,18 @@ class ProductRead(ProductBase):
     created_at: datetime
     updated_at: datetime
     categories: list[CategoriesBase]
+    class Config:
+        from_attributes = True
+
+class ProductStars(ProductRead):
     star_count: int
     star_avg : int
     class Config:
         from_attributes = True
+
+class ProductComments(ProductStars):
+    comments: list[str]
+    created_at : datetime
+    class Config:
+        from_attributes = True
+

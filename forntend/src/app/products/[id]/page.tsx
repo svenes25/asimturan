@@ -1,10 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import {useEffect, useState} from "react";
 import { useParams, useRouter } from "next/navigation";
 import { ArrowLeft, Star, Minus, Plus, User, ChevronLeft, ChevronRight } from "lucide-react";
 import Header from "@/components/header";
 import Footer from "@/components/footer";
+import {useProducts} from "@/lib/products";
+import {useCart} from "@/lib/cart";
 
 export default function ProductDetailPage() {
     const { id } = useParams();
@@ -13,56 +15,54 @@ export default function ProductDetailPage() {
     const [newComment, setNewComment] = useState("");
     const [newRating, setNewRating] = useState(5);
     const [currentSlide, setCurrentSlide] = useState(0);
+    const {selectedProduct,fetchProduct} = useProducts()
+    useEffect(() => {
+        fetchProduct(id)
+    }, []);
+    const {addToCart} = useCart()
+    // const products = [
+    //     {
+    //         id: 11,
+    //         name: "Premium Kablosuz Kulaklık",
+    //         price: 299.99,
+    //         image: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=400&h=400&fit=crop",
+    //         rating: 4.8,
+    //         reviews: 124,
+    //         description: "Kristal netliğinde ses deneyimi sunan premium kablosuz kulaklık. Aktif gürültü engelleme, 30 saat pil ömrü ve konforlu pedleri ile mükemmel kullanım.",
+    //         features: ["Aktif Gürültü Engelleme", "30 saat pil", "Bluetooth 5.0", "Hızlı şarj (15dk = 3saat)"],
+    //         inStock: true,
+    //         comments: [
+    //             { id: 1, user: "John Smith", rating: 5, comment: "Harika ses kalitesi! Gürültü engelleme uçuşlarda mükemmel çalışıyor.", date: "2024-01-15", verified: true },
+    //             { id: 2, user: "Sarah Johnson", rating: 4, comment: "Genel olarak çok iyi kulaklık, fakat çantası biraz daha küçük olabilirdi.", date: "2024-01-10", verified: true },
+    //             { id: 3, user: "Mike Wilson", rating: 5, comment: "Şimdiye kadar sahip olduğum en iyi kulaklık. Pil ömrü inanılmaz!", date: "2024-01-08", verified: false }
+    //         ]
+    //     },
+    //     {
+    //         id: 2,
+    //         name: "Akıllı Spor Saati",
+    //         price: 199.99,
+    //         image: "https://images.unsplash.com/photo-1544117519-31a4b719223d?w=400&h=400&fit=crop",
+    //         rating: 4.6,
+    //         reviews: 89,
+    //         description: "Fitness hedeflerinizi takip edin. Kalp atış hızı ölçümü, GPS takibi ve 7 gün pil ömrü sunar.",
+    //         features: ["Kalp atış hızı ölçümü", "GPS takibi", "Suya dayanıklı", "7 gün pil ömrü"],
+    //         inStock: true,
+    //         comments: [
+    //             { id: 1, user: "Emma Davis", rating: 5, comment: "Günlük antrenmanlarım için mükemmel. GPS çok hassas.", date: "2024-01-12", verified: true },
+    //             { id: 2, user: "Tom Brown", rating: 4, comment: "İyi bir saat ama uygulama biraz daha kullanıcı dostu olabilirdi.", date: "2024-01-09", verified: true }
+    //         ]
+    //     },
+    //     // Diğer ürünler aynı şekilde çevrilebilir
+    // ];
 
-    // Örnek veri — Gerçekte API veya veritabanından çekeceksin
-    const products = [
-        {
-            id: 11,
-            name: "Premium Kablosuz Kulaklık",
-            price: 299.99,
-            image: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=400&h=400&fit=crop",
-            rating: 4.8,
-            reviews: 124,
-            description: "Kristal netliğinde ses deneyimi sunan premium kablosuz kulaklık. Aktif gürültü engelleme, 30 saat pil ömrü ve konforlu pedleri ile mükemmel kullanım.",
-            features: ["Aktif Gürültü Engelleme", "30 saat pil", "Bluetooth 5.0", "Hızlı şarj (15dk = 3saat)"],
-            inStock: true,
-            comments: [
-                { id: 1, user: "John Smith", rating: 5, comment: "Harika ses kalitesi! Gürültü engelleme uçuşlarda mükemmel çalışıyor.", date: "2024-01-15", verified: true },
-                { id: 2, user: "Sarah Johnson", rating: 4, comment: "Genel olarak çok iyi kulaklık, fakat çantası biraz daha küçük olabilirdi.", date: "2024-01-10", verified: true },
-                { id: 3, user: "Mike Wilson", rating: 5, comment: "Şimdiye kadar sahip olduğum en iyi kulaklık. Pil ömrü inanılmaz!", date: "2024-01-08", verified: false }
-            ]
-        },
-        {
-            id: 2,
-            name: "Akıllı Spor Saati",
-            price: 199.99,
-            image: "https://images.unsplash.com/photo-1544117519-31a4b719223d?w=400&h=400&fit=crop",
-            rating: 4.6,
-            reviews: 89,
-            description: "Fitness hedeflerinizi takip edin. Kalp atış hızı ölçümü, GPS takibi ve 7 gün pil ömrü sunar.",
-            features: ["Kalp atış hızı ölçümü", "GPS takibi", "Suya dayanıklı", "7 gün pil ömrü"],
-            inStock: true,
-            comments: [
-                { id: 1, user: "Emma Davis", rating: 5, comment: "Günlük antrenmanlarım için mükemmel. GPS çok hassas.", date: "2024-01-12", verified: true },
-                { id: 2, user: "Tom Brown", rating: 4, comment: "İyi bir saat ama uygulama biraz daha kullanıcı dostu olabilirdi.", date: "2024-01-09", verified: true }
-            ]
-        },
-        // Diğer ürünler aynı şekilde çevrilebilir
-    ];
-
-    const selectedProduct = products.find((p) => p.id.toString() === id);
     const [comments, setComments] = useState(selectedProduct?.comments || []);
-
-    const addToCart = (product, qty) => {
-        console.log("Sepete eklendi:", product, qty);
-    };
 
     const handleAddComment = (e) => {
         e.preventDefault();
         if (newComment.trim()) {
             const comment = {
                 id: comments.length + 1,
-                user: "Mevcut Kullanıcı", // Gerçekte oturum bilgisinden al
+                user: "Mevcut Kullanıcı",
                 rating: newRating,
                 comment: newComment.trim(),
                 date: new Date().toISOString().split('T')[0],
@@ -99,7 +99,7 @@ export default function ProductDetailPage() {
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
                         <div>
                             <img
-                                src={selectedProduct.image}
+                                src={`http://localhost:8000${selectedProduct.image_url}`}
                                 alt={selectedProduct.name}
                                 className="w-full h-96 object-cover rounded-lg mb-8"
                             />
@@ -188,24 +188,6 @@ export default function ProductDetailPage() {
                             <p className="text-3xl font-bold text-blue-600 mb-6">{selectedProduct.price}₺</p>
 
                             <p className="text-gray-700 mb-6">{selectedProduct.description}</p>
-
-                            <div className="mb-6">
-                                <h3 className="font-semibold text-lg mb-3">Özellikler:</h3>
-                                <ul className="space-y-2">
-                                    {selectedProduct.features.map((feature, index) => (
-                                        <li key={index} className="flex items-center">
-                                            <div className="w-2 h-2 bg-blue-600 rounded-full mr-3"></div>
-                                            {feature}
-                                        </li>
-                                    ))}
-                                </ul>
-                            </div>
-
-                            <div className={`mb-6 p-3 rounded-lg ${selectedProduct.inStock ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
-                                {selectedProduct.inStock ? 'Stokta Var - Hemen Gönderim' : 'Stokta Yok'}
-                            </div>
-
-                            {selectedProduct.inStock && (
                                 <div className="space-y-4">
                                     <div className="flex items-center space-x-4">
                                         <span className="font-semibold">Adet:</span>
@@ -224,7 +206,7 @@ export default function ProductDetailPage() {
                                         Sepete Ekle - {(selectedProduct.price * quantity).toFixed(2)}₺
                                     </button>
                                 </div>
-                            )}
+
                         </div>
                     </div>
                 </div>

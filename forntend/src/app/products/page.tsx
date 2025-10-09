@@ -15,7 +15,7 @@ export default function ProductsPage() {
     const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
     const [priceRange, setPriceRange] = useState([0, 10000]);
     const {categories} = useCategories()
-    const {products} = useProducts()
+    const {productsStars:products} = useProducts()
     const {addToCart} = useCart()
     const toggleCategory = (category: string) => {
         if (selectedCategories.includes(category)) {

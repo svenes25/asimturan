@@ -9,5 +9,4 @@ class CategoriesCreate(CategoriesBase):
 class CategoriesRead(CategoriesBase):
     id: int
     product_count : int
-
     model_config = {"from_attributes": True}  # v2 uyumlu

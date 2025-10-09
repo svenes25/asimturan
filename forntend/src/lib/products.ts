@@ -11,17 +11,23 @@ type Product = {
 
 export function useProducts() {
     const [products, setProducts] = useState<Product[]>([]);
+    const [productsRead, setProductsRead] = useState<any[]>([]);
+    const [productsStars, setProductsStars] = useState<any[]>([]);
+    const [productsComments, setProductsComments] = useState<any[]>([]);
     const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
     const [isLoading, setIsLoading] = useState<boolean>(false);
     const [error, setError] = useState<string | null>(null);
-
-    // Tüm ürünleri çek
     const fetchProducts = useCallback(async () => {
         setIsLoading(true);
         setError(null);
         try {
             const res = await api.get("/products");
             setProducts(res.data);
+            const readRes = await api.get("/products/read");
+            setProductsRead(readRes.data);
+            // Stars
+            const starsRes = await api.get("/products/stars");
+            setProductsStars(starsRes.data);
         } catch (err: any) {
             setError(err.message || "Ürünler alınamadı.");
         } finally {
@@ -34,8 +40,8 @@ export function useProducts() {
         setIsLoading(true);
         setError(null);
         try {
-            const res = await api.get(`/products/${id}`);
-            setSelectedProduct(res.data);
+            const commentsRes = await api.get(`/products/${id}`);
+            setSelectedProduct(commentsRes.data);
         } catch (err: any) {
             setError(err.message || "Ürün alınamadı.");
         } finally {
@@ -70,7 +76,6 @@ export function useProducts() {
         }
     }, []);
 
-    // Ürün sil (onaylı)
     const deleteProduct = useCallback(async (id: number) => {
         const confirmed = window.confirm("Bu ürünü silmek istediğinize emin misiniz?");
         if (!confirmed) return;
@@ -85,7 +90,6 @@ export function useProducts() {
         }
     }, [selectedProduct]);
 
-    // Görsel yükle
     const uploadImage = useCallback(async (file: File) => {
         const formData = new FormData();
         formData.append("file", file);
@@ -106,6 +110,9 @@ export function useProducts() {
 
     return {
         products,
+        productsRead,
+        productsStars,
+        productsComments,
         selectedProduct,
         isLoading,
         error,
