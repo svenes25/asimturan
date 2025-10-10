@@ -4,7 +4,7 @@ from ..database import get_db
 from ..models.campaign_categories import CampaignCategories
 from ..schemas.campaign_categories import CampaignCategoriesCreate, CampaignCategoriesRead
 
-router = APIRouter(prefix="/campaign_kategories", tags=["campaign_kategories"])
+router = APIRouter(prefix="/campaign_categories", tags=["campaign_categories"])
 
 @router.get("/", response_model=list[CampaignCategoriesRead])
 def get_campaign_kategories(db: Session = Depends(get_db)):
@@ -27,7 +27,7 @@ def create_campaign_kategorie(ck: CampaignCategoriesCreate, db: Session = Depend
 
 @router.put("/{id}", response_model=CampaignCategoriesRead)
 def update_campaign_kategorie(id: int, ck: CampaignCategoriesCreate, db: Session = Depends(get_db)):
-    db_ck = db.query(CampaignCategories).filter(CampaignCategories.id == id).first()
+    db_ck = db.query(CampaignCategories).filter(CampaignCategories.campaign_id == id).first()
     if not db_ck:
         raise HTTPException(status_code=404, detail="CampaignKategories not found")
     for key, value in ck.dict().items():

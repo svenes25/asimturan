@@ -2,6 +2,7 @@ from pydantic import BaseModel
 from datetime import datetime
 from .categories import CategoriesBase
 class ProductBase(BaseModel):
+    id: int
     name: str
     price: float
     lower: int | None = None
@@ -14,7 +15,6 @@ class ProductCreate(ProductBase):
     categoryIds: list[int]
 
 class ProductRead(ProductBase):
-    id: int
     created_at: datetime
     updated_at: datetime
     categories: list[CategoriesBase]

@@ -78,8 +78,8 @@ export default function ProductsPage() {
                             <label key={idx} className="flex items-center gap-2 mb-1 cursor-pointer">
                                 <input
                                     type="checkbox"
-                                    checked={selectedCategories.includes(cat.name)}
-                                    onChange={() => toggleCategory(cat.name)}
+                                    checked={selectedCategories.includes(cat.name,cat.id)}
+                                    onChange={() => toggleCategory(cat.name,cat.id)}
                                     className="w-4 h-4"
                                 />
                                 <span>{cat.name}</span>

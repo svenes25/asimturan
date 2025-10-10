@@ -1,41 +1,53 @@
 "use client";
 import { useCallback, useEffect, useRef, useState } from "react";
 
-const STORAGE_KEY = "cart_v1"; // ileride schema değişirse versiyon arttır
+const STORAGE_KEY = "cart_v1";
 
 function safeParse<T>(value: string | null): T | null {
     if (!value) return null;
     try { return JSON.parse(value) as T; } catch { return null; }
 }
 
-function writeStorageDebounced(key: string, value: any, timeout = 200) {
-    // basit debounce per-hook instance için
+function writeStorageDebounced(key: string, timeout = 200) {
     let t: any;
     return (v: any) => {
         clearTimeout(t);
         t = setTimeout(() => {
-            try { localStorage.setItem(key, JSON.stringify(v)); } catch { /* ignore quota errors */ }
+            try {
+                localStorage.setItem(key, JSON.stringify(v));
+                // Sekmeler arası senkronizasyon için
+                localStorage.setItem(`${key}_last_update`, Date.now().toString());
+                // Aynı sekmedeki bileşenleri tetiklemek için
+                window.dispatchEvent(new CustomEvent("cart:updated", { detail: v }));
+            } catch {}
         }, timeout);
     };
 }
 
 export function useCart() {
-    // Senkron initial read: sayfa yenilenince kaybolmaz
-    const initial = typeof window !== "undefined" ? safeParse<any[]>(localStorage.getItem(STORAGE_KEY)) ?? [] : [];
+    const initial = typeof window !== "undefined"
+        ? safeParse<any[]>(localStorage.getItem(STORAGE_KEY)) ?? []
+        : [];
+
     const [cart, setCart] = useState<any[]>(initial);
-
     const writeRef = useRef<(v: any) => void>();
-    if (!writeRef.current) writeRef.current = writeStorageDebounced(STORAGE_KEY, cart, 200);
+    const isExternalUpdate = useRef(false);
 
-    // local write + broadcast
+    if (!writeRef.current) writeRef.current = writeStorageDebounced(STORAGE_KEY, 200);
+
+    // İlk yükleme
     useEffect(() => {
-        try {
-            writeRef.current!(cart);
-        } catch {}
-        // same-tab update
-        try { window.dispatchEvent(new CustomEvent("cart:updated", { detail: cart })); } catch {}
-        // cross-tab (storage event) için ayrıca localStorage'e direkt yazıyoruz (debounced yazma garanti etmiyorsa)
-        try { localStorage.setItem(`${STORAGE_KEY}_last_update`, Date.now().toString()); } catch {}
+        const stored = localStorage.getItem(STORAGE_KEY);
+        if (stored) setCart(JSON.parse(stored));
+    }, []);
+
+    // cart değiştiğinde localStorage'e yaz
+    useEffect(() => {
+        if (isExternalUpdate.current) {
+            isExternalUpdate.current = false;
+            return;
+        }
+        writeRef.current?.(cart);
     }, [cart]);
 
     // storage ve custom event dinleyicileri
@@ -43,26 +55,17 @@ export function useCart() {
         const onCustom = (e: Event) => {
             const detail = (e as CustomEvent).detail;
             if (!detail) return;
-            setCart((prev) => {
-                // eğer payload eşitse güncelleme yapma
-                try {
-                    const same = JSON.stringify(prev) === JSON.stringify(detail);
-                    if (same) return prev;
-                } catch {}
-                return detail;
-            });
+            isExternalUpdate.current = true;
+            setCart(detail);
         };
 
         const onStorage = (e: StorageEvent) => {
-            if (e.key === STORAGE_KEY) {
-                const parsed = safeParse<any[]>(e.newValue);
-                if (parsed) setCart(parsed);
-                return;
-            }
-            // fallback: timestamp trigger
-            if (e.key === `${STORAGE_KEY}_last_update`) {
+            if (e.key === STORAGE_KEY || e.key === `${STORAGE_KEY}_last_update`) {
                 const parsed = safeParse<any[]>(localStorage.getItem(STORAGE_KEY));
-                if (parsed) setCart(parsed);
+                if (parsed) {
+                    isExternalUpdate.current = true;
+                    setCart(parsed);
+                }
             }
         };
 
@@ -85,7 +88,9 @@ export function useCart() {
         persistAndSet((prev: any[]) => {
             const existing = prev.find((p) => p.id === product.id);
             if (existing) {
-                return prev.map((p) => (p.id === product.id ? { ...p, quantity: p.quantity + quantity } : p));
+                return prev.map((p) =>
+                    p.id === product.id ? { ...p, quantity: p.quantity + quantity } : p
+                );
             }
             return [...prev, { ...product, quantity }];
         });
@@ -95,13 +100,27 @@ export function useCart() {
         persistAndSet((prev: any[]) => prev.filter((p) => p.id !== productId));
     }, [persistAndSet]);
 
-    const updateQuantity = useCallback((productId: number, quantity: number) => {
-        if (quantity <= 0) return removeFromCart(productId);
-        persistAndSet((prev: any[]) => prev.map((p) => (p.id === productId ? { ...p, quantity } : p)));
-    }, [persistAndSet, removeFromCart]);
+    const updateQuantity = useCallback(
+        (productId: number, quantity: number) => {
+            if (quantity <= 0) return removeFromCart(productId);
+            persistAndSet((prev: any[]) =>
+                prev.map((p) =>
+                    p.id === productId ? { ...p, quantity } : p
+                )
+            );
+        },
+        [persistAndSet, removeFromCart]
+    );
 
-    const getTotalItems = useCallback(() => cart.reduce((t, it) => t + (it.quantity || 0), 0), [cart]);
-    const getTotalPrice = useCallback(() => cart.reduce((t, it) => t + (Number(it.price) || 0) * (it.quantity || 0), 0), [cart]);
+    const getTotalItems = useCallback(
+        () => cart.reduce((t, it) => t + (it.quantity || 0), 0),
+        [cart]
+    );
+
+    const getTotalPrice = useCallback(
+        () => cart.reduce((t, it) => t + (Number(it.price) || 0) * (it.quantity || 0), 0),
+        [cart]
+    );
 
     return { cart, addToCart, removeFromCart, updateQuantity, getTotalItems, getTotalPrice, setCart };
 }

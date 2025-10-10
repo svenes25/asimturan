@@ -2,7 +2,7 @@ from pydantic import BaseModel
 
 class CampaignCategoriesBase(BaseModel):
     campaign_id: int
-    categori_id: int
+    category_id: int
 
 class CampaignCategoriesCreate(CampaignCategoriesBase):
     pass

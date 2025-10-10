@@ -27,7 +27,7 @@ def create_campaign_product(cp: CampaignProductsCreate, db: Session = Depends(ge
 
 @router.put("/{id}", response_model=CampaignProductsRead)
 def update_campaign_product(id: int, cp: CampaignProductsCreate, db: Session = Depends(get_db)):
-    db_cp = db.query(CampaignProducts).filter(CampaignProducts.id == id).first()
+    db_cp = db.query(CampaignProducts).filter(CampaignProducts.campaign_id == id).first()
     if not db_cp:
         raise HTTPException(status_code=404, detail="CampaignProducts not found")
     for key, value in cp.dict().items():
