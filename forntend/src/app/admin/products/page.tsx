@@ -13,7 +13,7 @@ export default function ProductsManagement() {
     const [showAddForm, setShowAddForm] = useState(false);
     const {categories} = useCategories()
     const {
-        productsRead:products,
+        productsRead,
         deleteProduct,
         updateProduct,
         createProduct,
@@ -152,7 +152,7 @@ export default function ProductsManagement() {
                                     </tr>
                                     </thead>
                                     <tbody className="bg-white divide-y divide-gray-200">
-                                    {products
+                                    {productsRead
                                         .filter((p) =>
                                             p.name.toLowerCase().includes(searchTerm.toLowerCase())
                                         )
@@ -304,15 +304,19 @@ export default function ProductsManagement() {
                                             <input
                                                 type="checkbox"
                                                 value={cat.id}
-                                                checked={editingProduct?.categoryIds?.includes(cat.id) || false}
+                                                checked={editingProduct?.categoryIds?.includes(cat.id) ?? false} // ?? ile undefined kontrolü
                                                 onChange={(e) => {
                                                     const id = cat.id;
-                                                    setEditingProduct((prev) => ({
-                                                        ...prev!,
-                                                        categoryIds: e.target.checked
-                                                            ? [...(prev?.categoryIds || []), id]
-                                                            : prev!.categoryIds.filter((cid) => cid !== id)
-                                                    }));
+                                                    setEditingProduct((prev) => {
+                                                        if (!prev) return null;
+                                                        const currentCategories = prev.categoryIds || [];
+                                                        return {
+                                                            ...prev,
+                                                            categoryIds: e.target.checked
+                                                                ? [...currentCategories, id]
+                                                                : currentCategories.filter((cid) => cid !== id)
+                                                        };
+                                                    });
                                                 }}
                                             />
                                             <span>{cat.name}</span>

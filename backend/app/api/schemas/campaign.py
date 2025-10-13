@@ -3,7 +3,7 @@ from typing import Optional
 from pydantic import BaseModel
 from datetime import date
 
-from api.schemas.categories import CategoriesRead, CategoriesBase
+from api.schemas.categories import CampaignCategoriesRead
 from api.schemas.product import ProductRead, ProductBase
 
 
@@ -20,7 +20,7 @@ class CampaignCreate(CampaignBase):
 class CampaignRead(CampaignBase):
     id: int
     products: Optional[list[ProductBase]]
-    categories: Optional[list[CategoriesBase]]
+    categories: Optional[list[CampaignCategoriesRead]]
 
     model_config = {"from_attributes": True}  # Pydantic v2 uyumlu
 class CampaignUpdate(BaseModel):

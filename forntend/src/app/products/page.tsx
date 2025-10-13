@@ -8,6 +8,7 @@ import {useRouter, useSearchParams} from "next/navigation";
 import {useCategories} from "@/lib/categories";
 import {useProducts} from "@/lib/products";
 import {useCart} from "@/lib/cart";
+import {useCampaigns} from "@/lib/campaign";
 
 export default function ProductsPage() {
     const router = useRouter();
@@ -18,6 +19,7 @@ export default function ProductsPage() {
     const { categories } = useCategories();
     const { productsStars: products } = useProducts();
     const { addToCart } = useCart();
+    const { campaigns } = useCampaigns()
     useEffect(() => {
         const categoryFromUrl = searchParams.get("category");
         if (categoryFromUrl) {
@@ -52,6 +54,38 @@ export default function ProductsPage() {
         const matchesPrice = product.price >= priceRange[0] && product.price <= priceRange[1];
         return matchesSearch && matchesCategory && matchesPrice;
     });
+    const getDiscountedPrice = (product: any) => {
+        if (!campaigns || campaigns.length === 0) return product.price;
+
+        const campaign = campaigns.find(c => {
+            // Ürün kampanya ürünlerinde varsa
+            const isProductIncluded = c.products?.some((p: any) => p.id === product.id);
+
+            const isCategoryIncluded = c.categories?.some((cat: any) =>
+                product.categories?.some((pcat: any) => {
+                    const match = pcat.id === cat.id;
+                    if (match == true) {
+                        console.log("Ürün kategorisi:", pcat, "Kampanya kategorisi:", cat, "Eşleşme:", match);
+                    }
+                    return match;
+                })
+            );
+
+            return isProductIncluded || isCategoryIncluded;
+        });
+
+        if (!campaign) return product.price;
+
+        if (campaign.type === "Sabit") {
+            return product.price - campaign.price;
+        } else if (campaign.type === "Yüzde") {
+            return product.price * (1 - campaign.price / 100);
+        }
+
+        return product.price;
+    };
+
+
     return (
         <div>
             <Header />
@@ -78,7 +112,7 @@ export default function ProductsPage() {
                             <label key={idx} className="flex items-center gap-2 mb-1 cursor-pointer">
                                 <input
                                     type="checkbox"
-                                    checked={selectedCategories.includes(cat.name,cat.id)}
+                                    checked={selectedCategories.includes(cat.name)}
                                     onChange={() => toggleCategory(cat.name,cat.id)}
                                     className="w-4 h-4"
                                 />
@@ -166,7 +200,22 @@ export default function ProductsPage() {
                                     </div>
                                     <p className="text-gray-600 text-sm mb-4 line-clamp-2">{product.description}</p>
                                     <div className="flex items-center justify-between mb-4">
-                                        <span className="text-2xl font-bold text-blue-600">{product.price}₺</span>
+                                        {(() => {
+                                            const discountedPrice = getDiscountedPrice(product);
+                                            const hasDiscount = discountedPrice !== product.price;
+                                            return (
+                                                <>
+                                                    {hasDiscount && (
+                                                        <span className="text-gray-400 line-through text-lg mr-2">
+                                                            {product.price}₺
+                                                        </span>
+                                                    )}
+                                                    <span className="text-2xl font-bold text-blue-600">
+                                                        {discountedPrice.toFixed(2)}₺
+                                                    </span>
+                                                </>
+                                            );
+                                        })()}
                                     </div>
                                     <div className="space-y-2">
                                         <button

@@ -21,8 +21,6 @@ export function useProducts() {
         setIsLoading(true);
         setError(null);
         try {
-            const res = await api.get("/products");
-            setProducts(res.data);
             const readRes = await api.get("/products/read");
             setProductsRead(readRes.data);
             // Stars

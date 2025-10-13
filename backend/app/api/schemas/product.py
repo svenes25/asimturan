@@ -1,6 +1,9 @@
 from pydantic import BaseModel
 from datetime import datetime
-from .categories import CategoriesBase
+
+from api.schemas.categories import CategoriesBase, CampaignCategoriesRead
+
+
 class ProductBase(BaseModel):
     id: int
     name: str
@@ -17,7 +20,7 @@ class ProductCreate(ProductBase):
 class ProductRead(ProductBase):
     created_at: datetime
     updated_at: datetime
-    categories: list[CategoriesBase]
+    categories: list[CampaignCategoriesRead]
     class Config:
         from_attributes = True
 
