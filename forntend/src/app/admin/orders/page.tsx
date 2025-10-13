@@ -6,35 +6,33 @@ import Header from "@/components/header";
 import Footer from "@/components/footer";
 import Sidebar from "@/components/sidebar";
 import Link from "next/link";
+import {useOrders} from "@/lib/orders";
 export default function OrdersManagement() {
     const [searchTerm, setSearchTerm] = useState("");
-
-    const sampleOrders = [
-        {
-            id: 1,
-            orderNumber: "ORD-2025-001",
-            products: [
-                { name: "Premium Wireless Headphones", quantity: 1 },
-                { name: "Laptop Stand Pro", quantity: 2 },
-            ],
-            total: 459.97,
-            status: "Hazırlanıyor",
-            note: ""
-        },
-        {
-            id: 2,
-            orderNumber: "ORD-2025-002",
-            products: [
-                { name: "Smart Fitness Watch", quantity: 1 },
-            ],
-            total: 199.99,
-            status: "Kargoda",
-            note: "Kargo No: 123456"
-        }
-    ];
-
-    const [orders, setOrders] = useState(sampleOrders);
-
+    const {orders} = useOrders()
+    // const sampleOrders = [
+    //     {
+    //         id: 1,
+    //         orderNumber: "ORD-2025-001",
+    //         products: [
+    //             { name: "Premium Wireless Headphones", quantity: 1 },
+    //             { name: "Laptop Stand Pro", quantity: 2 },
+    //         ],
+    //         total: 459.97,
+    //         status: "Hazırlanıyor",
+    //         note: ""
+    //     },
+    //     {
+    //         id: 2,
+    //         orderNumber: "ORD-2025-002",
+    //         products: [
+    //             { name: "Smart Fitness Watch", quantity: 1 },
+    //         ],
+    //         total: 199.99,
+    //         status: "Kargoda",
+    //         note: "Kargo No: 123456"
+    //     }
+    // ];
     const handleUpdate = (id: number, status: string, note: string) => {
         setOrders(prev =>
             prev.map(order =>
@@ -42,7 +40,6 @@ export default function OrdersManagement() {
             )
         );
     };
-
     return (
         <div>
             <Header />
@@ -91,9 +88,6 @@ export default function OrdersManagement() {
                                     </thead>
                                     <tbody className="bg-white divide-y divide-gray-200">
                                     {orders
-                                        .filter(o =>
-                                            o.orderNumber.toLowerCase().includes(searchTerm.toLowerCase())
-                                        )
                                         .map((order) => (
                                             <tr key={order.id}>
                                                 {/* Sipariş No */}
@@ -102,38 +96,42 @@ export default function OrdersManagement() {
                                                         href={`/admin/orders/${order.id}`}
                                                         className="text-blue-600 hover:underline"
                                                     >
-                                                        {order.orderNumber}
+                                                        {order.id}
                                                     </Link>
                                                 </td>
                                                 {/* İçerik */}
                                                 <td className="px-6 py-4 text-sm text-gray-700">
-                                                    {order.products.map((p, idx) => (
+                                                    {order.detail.map((p, idx) => (
                                                         <div key={idx}>
-                                                            {p.name} <span className="text-gray-500">x{p.quantity}</span>
+                                                            {p.name} <span className="text-gray-500">x{p.piece}</span>
                                                         </div>
                                                     ))}
                                                 </td>
 
                                                 {/* Fiyat */}
                                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                                    {order.total.toFixed(2)}₺
+                                                    {order.detail.map((p, idx) => (
+                                                        <div key={idx}>
+                                                            {p.price}₺
+                                                        </div>
+                                                    ))}
                                                 </td>
 
                                                 {/* Durum */}
                                                 <td className="px-6 py-4 whitespace-nowrap">
-                            <span
-                                className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                                    order.status === "Hazırlanıyor"
-                                        ? "bg-yellow-100 text-yellow-800"
-                                        : order.status === "Kargoda"
-                                            ? "bg-blue-100 text-blue-800"
-                                            : order.status === "Teslim Edildi"
-                                                ? "bg-green-100 text-green-800"
-                                                : "bg-red-100 text-red-800"
-                                }`}
-                            >
-                              {order.status}
-                            </span>
+                                                <span
+                                                    className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                                                        order.status === "Hazırlanıyor"
+                                                            ? "bg-yellow-100 text-yellow-800"
+                                                            : order.status === "Kargoda"
+                                                                ? "bg-blue-100 text-blue-800"
+                                                                : order.status === "Teslim Edildi"
+                                                                    ? "bg-green-100 text-green-800"
+                                                                    : "bg-red-100 text-red-800"
+                                                    }`}
+                                                >
+                                                  {order.status}
+                                                </span>
                                                 </td>
 
                                                 {/* Yönetim */}
@@ -159,11 +157,11 @@ export default function OrdersManagement() {
                                                         <input
                                                             type="text"
                                                             placeholder="Not"
-                                                            value={order.note}
+                                                            value={order.status_detail}
                                                             onChange={(e) =>
                                                                 setOrders(prev =>
                                                                     prev.map(o =>
-                                                                        o.id === order.id ? { ...o, note: e.target.value } : o
+                                                                        o.id === order.id ? { ...o, status_detail: e.target.value } : o
                                                                     )
                                                                 )
                                                             }
@@ -171,7 +169,7 @@ export default function OrdersManagement() {
                                                         />
 
                                                         <button
-                                                            onClick={() => handleUpdate(order.id, order.status, order.note)}
+                                                            onClick={() => handleUpdate(order.id, order.status, order.status_detail)}
                                                             className="bg-purple-600 text-white px-3 py-1 rounded text-sm hover:bg-purple-700"
                                                         >
                                                             Kaydet

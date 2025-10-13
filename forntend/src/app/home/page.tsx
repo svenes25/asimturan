@@ -1,20 +1,23 @@
 "use client"
-import { ShoppingCart, Star, Phone } from 'lucide-react';
+import { ShoppingCart, Star, Phone, ChevronLeft, ChevronRight } from "lucide-react";
 import Header from "@/components/header";
 import Footer from "@/components/footer";
 import { useRouter } from "next/navigation";
-import React, {useEffect, useState} from "react";
-import {useCategories} from "@/lib/categories";
-import {useProducts} from "@/lib/products";
-import {useCampaigns} from "@/lib/campaign";
+import React, { useEffect, useState } from "react";
+import { useCategories } from "@/lib/categories";
+import { useProducts } from "@/lib/products";
+import { useCampaigns } from "@/lib/campaign";
 
 export default function HomePage() {
     const router = useRouter();
-    const {categories} = useCategories()
-    const { campaigns } = useCampaigns()
-    const {productsRead:products} = useProducts()
+    const { categories } = useCategories();
+    const { campaigns } = useCampaigns();
+    const { productsRead: products } = useProducts();
+
     const topSellingProducts = [...products].sort((a, b) => b.sold - a.sold);
     const topRatedProducts = [...products].sort((a, b) => b.rating - a.rating);
+
+    // Kampanya ürünlerini ve kategorilerini tek bir array haline getir
     const [campaignItems, setCampaignItems] = useState([]);
     useEffect(() => {
         if (campaigns && campaigns.length > 0) {
@@ -25,9 +28,51 @@ export default function HomePage() {
             setCampaignItems(allItems);
         }
     }, [campaigns]);
+
+    // --- Slider mantığı ---
+    const [currentCategorySlide, setCurrentCategorySlide] = useState(0);
+    const itemsPerSlide = 3;
+
+    const categorySlides = [];
+    for (let i = 0; i < categories.length; i += itemsPerSlide) {
+        categorySlides.push(categories.slice(i, i + itemsPerSlide));
+    }
+    const totalCategorySlides = categorySlides.length;
+
+    const prevCategorySlide = () => {
+        setCurrentCategorySlide((prev) => (prev === 0 ? totalCategorySlides - 1 : prev - 1));
+    };
+    const nextCategorySlide = () => {
+        setCurrentCategorySlide((prev) => (prev === totalCategorySlides - 1 ? 0 : prev + 1));
+    };
+    const goToCategorySlide = (index: number) => setCurrentCategorySlide(index);
+
+    // --- Kampanya fiyatını hesaplayan fonksiyon ---
+    const getDiscountedPrice = (product: any) => {
+        if (!campaigns || campaigns.length === 0) return product.price;
+
+        // Ürünü içeren kampanya
+        const campaign = campaigns.find(c =>
+            (c.products?.some((p: any) => p.id === product.id)) ||
+            (c.categories?.some((cat: any) =>
+                product.categories?.some((pcat: any) => pcat.id === cat.id)
+            ))
+        );
+
+        if (!campaign) return product.price;
+
+        if (campaign.type === "Sabit") {
+            return product.price - campaign.price;
+        } else if (campaign.type === "Yüzde") {
+            return product.price * (1 - campaign.price / 100);
+        }
+        return product.price;
+    };
+
     return (
         <div>
             <Header />
+
             {/* Hero Section */}
             <section className="bg-gradient-to-r from-blue-600 to-purple-600 text-white py-20">
                 <div className="container mx-auto px-4 text-center">
@@ -36,37 +81,81 @@ export default function HomePage() {
                 </div>
             </section>
 
-            {/* Kategoriler */}
-            <section className="py-16 bg-gray-50">
+            {/* Popüler Kategoriler */}
+            <section className="py-16 bg-gray-50 relative">
                 <div className="container mx-auto px-4">
                     <h2 className="text-3xl font-bold text-center mb-12">Popüler Kategoriler</h2>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                        {categories.map(cat => {
-                            const productForCategory = products.find(p =>
-                                p.categories?.some(c => c.name === cat.name)
-                            );
-                            return (
-                                <div
-                                    key={cat.id}
-                                    className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg cursor-pointer"
-                                    onClick={() => router.push(`/products?category=${cat.id}`)}
-                                >
-                                    <img
-                                        src={`http://localhost:8000${productForCategory?.image_url}`}
-                                        alt={cat.name}
-                                        className="w-full h-48 object-cover"
-                                    />
-                                    <div className="p-6 text-center">
-                                        <h3 className="text-xl font-semibold">{cat.name}</h3>
-                                    </div>
+                    <div className="overflow-hidden relative">
+                        <div
+                            className="flex transition-transform duration-500"
+                            style={{ transform: `translateX(-${currentCategorySlide * 100}%)` }}
+                        >
+                            {categorySlides.map((slideItems, slideIndex) => (
+                                <div key={slideIndex} className="flex flex-shrink-0 w-full gap-4 px-2">
+                                    {slideItems.map((cat) => {
+                                        const productForCategory = products.find(p =>
+                                            p.categories?.some(c => c.id === cat.id)
+                                        );
+                                        return (
+                                            <div
+                                                key={cat.id}
+                                                className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg cursor-pointer flex-1"
+                                                onClick={() => router.push(`/products?category=${cat.id}`)}
+                                            >
+                                                <img
+                                                    src={`http://localhost:8000${productForCategory?.image_url}`}
+                                                    alt={cat.name}
+                                                    className="w-full h-48 object-cover"
+                                                />
+                                                <div className="p-6 text-center">
+                                                    <h3 className="text-xl font-semibold">{cat.name}</h3>
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
                                 </div>
-                            );
-                        })}
+                            ))}
+                        </div>
+
+                        {totalCategorySlides > 1 && (
+                            <>
+                                <button
+                                    onClick={prevCategorySlide}
+                                    className="absolute left-2 top-1/2 transform -translate-y-1/2 bg-white bg-opacity-90 hover:bg-opacity-100 rounded-full p-2 shadow-lg transition-all duration-200"
+                                >
+                                    <ChevronLeft size={20} className="text-gray-600" />
+                                </button>
+                                <button
+                                    onClick={nextCategorySlide}
+                                    className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-white bg-opacity-90 hover:bg-opacity-100 rounded-full p-2 shadow-lg transition-all duration-200"
+                                >
+                                    <ChevronRight size={20} className="text-gray-600" />
+                                </button>
+
+                                <div className="flex justify-center mt-4 space-x-2">
+                                    {categorySlides.map((_, index) => (
+                                        <button
+                                            key={index}
+                                            onClick={() => goToCategorySlide(index)}
+                                            className={`w-3 h-3 rounded-full transition-all duration-200 ${
+                                                index === currentCategorySlide
+                                                    ? "bg-blue-600 scale-110"
+                                                    : "bg-gray-300 hover:bg-gray-400"
+                                            }`}
+                                        />
+                                    ))}
+                                </div>
+
+                                <div className="text-center mt-2 text-sm text-gray-500">
+                                    {currentCategorySlide + 1} / {totalCategorySlides} sayfa
+                                </div>
+                            </>
+                        )}
                     </div>
                 </div>
             </section>
 
-            {/* En Çok Satan Ürünler */}
+            {/* Öne Çıkan Ürünler */}
             <section className="py-16">
                 <div className="container mx-auto px-4">
                     <h2 className="text-3xl font-bold text-center mb-12">Öne Çıkan Ürünler</h2>
@@ -100,28 +189,28 @@ export default function HomePage() {
                 </div>
             </section>
 
+            {/* İndirimli Ürünler */}
             <section className="py-16 bg-gray-50">
                 <div className="container mx-auto px-4">
                     <h2 className="text-3xl font-bold text-center mb-12">İndirimli Ürünler</h2>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                        {campaignItems.map((item) => {
+                        {campaignItems.map(item => {
                             const productForCategory = products.find(p =>
                                 p.categories?.some(c => c.name === item.name)
                             );
+                            const discountedPrice = getDiscountedPrice(item);
+                            const hasDiscount = discountedPrice !== item.price;
+
                             return (
                                 <div key={item.id} className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow">
                                     <img
-                                        src={
-                                            item?.image_url
-                                                ? `http://localhost:8000${item.image_url}`
-                                                : `http://localhost:8000${productForCategory?.image_url}`
-                                        }
+                                        src={item?.image_url ? `http://localhost:8000${item.image_url}` : `http://localhost:8000${productForCategory?.image_url}`}
                                         alt={item.name}
                                         className="w-full h-48 object-cover"
                                     />
-
                                     <div className="p-6">
                                         <h3 className="font-semibold text-lg mb-2">{item.name}</h3>
+
                                         {item.image_url && (
                                             <>
                                                 <div className="flex items-center mb-2 justify-center">
@@ -130,40 +219,16 @@ export default function HomePage() {
                                                     ))}
                                                     <span className="text-gray-600 text-sm ml-2">({item.reviews || 0})</span>
                                                 </div>
-                                                <div className="mb-4">
-                                                    {item.image_url && (
-                                                        (() => {
-                                                            const campaign = campaigns.find(c =>
-                                                                c.products?.some(p => p.id === item.id)
-                                                            );
 
-                                                            let discountedPrice = item.price;
-
-                                                            if (campaign) {
-                                                                if (campaign.type === "Sabit") {
-                                                                    discountedPrice = item.price - campaign.price;
-                                                                } else if (campaign.type === "Yüzde") {
-                                                                    discountedPrice = item.price * (1 - campaign.price / 100);
-                                                                }
-                                                            }
-
-                                                            return (
-                                                                <>
-                                                                    {campaign && (
-                                                                        <span className="text-gray-400 line-through text-lg mr-2">
-                                                                        {item.price}₺
-                                                                    </span>
-                                                                    )}
-                                                                    <span className="text-2xl font-bold text-blue-600">
-                                                                        {discountedPrice.toFixed(2)}₺
-                                                                    </span>
-                                                                </>
-                                                            );
-                                                        })()
+                                                <div className="mb-4 flex items-center">
+                                                    {hasDiscount && (
+                                                        <span className="text-gray-400 line-through text-lg mr-2">{item.price}₺</span>
                                                     )}
+                                                    <span className="text-2xl font-bold text-blue-600">{discountedPrice.toFixed(2)}₺</span>
                                                 </div>
                                             </>
                                         )}
+
                                         <button
                                             onClick={() => {
                                                 if (item.image_url) {
@@ -176,7 +241,6 @@ export default function HomePage() {
                                         >
                                             Detayları Gör
                                         </button>
-
                                     </div>
                                 </div>
                             );
@@ -185,7 +249,7 @@ export default function HomePage() {
                 </div>
             </section>
 
-
+            {/* Beğenilen Ürünler */}
             <section className="py-16 bg-gray-50">
                 <div className="container mx-auto px-4">
                     <h2 className="text-3xl font-bold text-center mb-12">Beğenilen Ürünler</h2>
@@ -218,6 +282,7 @@ export default function HomePage() {
                     </div>
                 </div>
             </section>
+
             <Footer />
         </div>
     );

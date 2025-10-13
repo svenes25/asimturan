@@ -7,6 +7,7 @@ import Header from "@/components/header";
 import Footer from "@/components/footer";
 import {useProducts} from "@/lib/products";
 import {useCart} from "@/lib/cart";
+import {useCampaigns} from "@/lib/campaign";
 
 export default function ProductDetailPage() {
     const { id } = useParams();
@@ -20,40 +21,30 @@ export default function ProductDetailPage() {
         fetchProduct(id)
     }, []);
     const {addToCart} = useCart()
-    // const products = [
-    //     {
-    //         id: 11,
-    //         name: "Premium Kablosuz Kulaklık",
-    //         price: 299.99,
-    //         image: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=400&h=400&fit=crop",
-    //         rating: 4.8,
-    //         reviews: 124,
-    //         description: "Kristal netliğinde ses deneyimi sunan premium kablosuz kulaklık. Aktif gürültü engelleme, 30 saat pil ömrü ve konforlu pedleri ile mükemmel kullanım.",
-    //         features: ["Aktif Gürültü Engelleme", "30 saat pil", "Bluetooth 5.0", "Hızlı şarj (15dk = 3saat)"],
-    //         inStock: true,
-    //         comments: [
-    //             { id: 1, user: "John Smith", rating: 5, comment: "Harika ses kalitesi! Gürültü engelleme uçuşlarda mükemmel çalışıyor.", date: "2024-01-15", verified: true },
-    //             { id: 2, user: "Sarah Johnson", rating: 4, comment: "Genel olarak çok iyi kulaklık, fakat çantası biraz daha küçük olabilirdi.", date: "2024-01-10", verified: true },
-    //             { id: 3, user: "Mike Wilson", rating: 5, comment: "Şimdiye kadar sahip olduğum en iyi kulaklık. Pil ömrü inanılmaz!", date: "2024-01-08", verified: false }
-    //         ]
-    //     },
-    //     {
-    //         id: 2,
-    //         name: "Akıllı Spor Saati",
-    //         price: 199.99,
-    //         image: "https://images.unsplash.com/photo-1544117519-31a4b719223d?w=400&h=400&fit=crop",
-    //         rating: 4.6,
-    //         reviews: 89,
-    //         description: "Fitness hedeflerinizi takip edin. Kalp atış hızı ölçümü, GPS takibi ve 7 gün pil ömrü sunar.",
-    //         features: ["Kalp atış hızı ölçümü", "GPS takibi", "Suya dayanıklı", "7 gün pil ömrü"],
-    //         inStock: true,
-    //         comments: [
-    //             { id: 1, user: "Emma Davis", rating: 5, comment: "Günlük antrenmanlarım için mükemmel. GPS çok hassas.", date: "2024-01-12", verified: true },
-    //             { id: 2, user: "Tom Brown", rating: 4, comment: "İyi bir saat ama uygulama biraz daha kullanıcı dostu olabilirdi.", date: "2024-01-09", verified: true }
-    //         ]
-    //     },
-    //     // Diğer ürünler aynı şekilde çevrilebilir
-    // ];
+    const { campaigns } = useCampaigns();
+    const getDiscountedPrice = (product: any) => {
+        if (!campaigns || campaigns.length === 0) return product.price ?? 0;
+
+        // Ürünün dahil olduğu kampanyayı bul
+        const campaign = campaigns.find(c =>
+            c.products?.some((p: any) => p.id === product.id) ||
+            c.categories?.some((cat: any) =>
+                product.categories?.some((pcat: any) => pcat.id === cat.id)
+            )
+        );
+
+        if (!campaign) return product.price ?? 0;
+
+        let discountedPrice = product.price ?? 0;
+
+        if (campaign.type === "Sabit") {
+            discountedPrice -= campaign.price;
+        } else if (campaign.type === "Yüzde") {
+            discountedPrice *= 1 - campaign.price / 100;
+        }
+
+        return discountedPrice;
+    };
 
     const [comments, setComments] = useState(selectedProduct?.comments || []);
 
@@ -122,11 +113,6 @@ export default function ProductDetailPage() {
                                                             <div className="flex-1">
                                                                 <div className="flex items-center space-x-2 mb-2">
                                                                     <h5 className="font-semibold text-lg">{comment.user}</h5>
-                                                                    {comment.verified && (
-                                                                        <span className="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full">
-                                                                            ✓ Doğrulanmış Satın Alma
-                                                                        </span>
-                                                                    )}
                                                                 </div>
                                                                 <div className="flex items-center space-x-2 mb-3">
                                                                     <div className="flex text-yellow-400">
@@ -179,14 +165,11 @@ export default function ProductDetailPage() {
                             <div className="flex items-center mb-4">
                                 <div className="flex text-yellow-400">
                                     {[...Array(5)].map((_, i) => (
-                                        <Star key={i} size={20} fill={i < Math.floor(selectedProduct.rating) ? "currentColor" : "none"} />
+                                        <Star key={i} size={20} fill={i < Math.floor(selectedProduct.start_avg) ? "currentColor" : "none"} />
                                     ))}
                                 </div>
-                                <span className="text-gray-600 ml-2">({selectedProduct.reviews} yorum)</span>
+                                <span className="text-gray-600 ml-2">({selectedProduct.star_count})</span>
                             </div>
-
-                            <p className="text-3xl font-bold text-blue-600 mb-6">{selectedProduct.price}₺</p>
-
                             <p className="text-gray-700 mb-6">{selectedProduct.description}</p>
                                 <div className="space-y-4">
                                     <div className="flex items-center space-x-4">
@@ -202,9 +185,32 @@ export default function ProductDetailPage() {
                                         </div>
                                     </div>
 
-                                    <button onClick={() => { addToCart(selectedProduct, quantity); setQuantity(1); }} className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors">
-                                        Sepete Ekle - {(selectedProduct.price * quantity).toFixed(2)}₺
+                                    <div className="flex items-center mb-4">
+                                        {(() => {
+                                            const discountedPrice = getDiscountedPrice(selectedProduct);
+                                            const hasDiscount = discountedPrice !== (selectedProduct.price ?? 0);
+                                            return (
+                                                <>
+                                                    {hasDiscount && (
+                                                        <span className="text-gray-400 line-through text-lg mr-2">
+                                                                {(selectedProduct.price ?? 0).toFixed(2)}₺
+                                                            </span>
+                                                    )}
+                                                    <span className="text-3xl font-bold text-blue-600">
+                                                        {discountedPrice.toFixed(2)}₺
+                                                    </span>
+                                                </>
+                                            );
+                                        })()}
+                                    </div>
+
+                                    <button
+                                        onClick={() => { addToCart(selectedProduct, quantity); setQuantity(1); }}
+                                        className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors"
+                                    >
+                                        Sepete Ekle - {(getDiscountedPrice(selectedProduct) * quantity).toFixed(2)}₺
                                     </button>
+
                                 </div>
 
                         </div>

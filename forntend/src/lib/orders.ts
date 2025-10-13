@@ -2,27 +2,14 @@
 
 import { useState, useEffect, useCallback, useRef } from "react"
 import api from "@/lib/api.ts"
-
-// Order tipi
-export interface Order {
-    id: number
-    userId: number
-    products: { productId: number; quantity: number }[]
-    totalPrice: number
-    status: string
-    createdAt?: string
-    updatedAt?: string
-}
-
 export function useOrders() {
-    const [orders, setOrders] = useState<Order[]>([])
-    const [order, setOrder] = useState<Order | null>(null)
-    const [selectedOrder, setSelectedOrder] = useState<Order | null>(null)
+    const [orders, setOrders] = useState<[]>([])
+    const [order, setOrder] = useState<null>(null)
+    const [selectedOrder, setSelectedOrder] = useState<null>(null)
     const [isLoading, setIsLoading] = useState<boolean>(false)
     const [error, setError] = useState<string | null>(null)
     const lastFetchRef = useRef<number>(0)
 
-    /* ----------------------------- TÜM ORDERS GETİR ----------------------------- */
     const fetchOrders = useCallback(async () => {
         try {
             setIsLoading(true)
@@ -36,7 +23,6 @@ export function useOrders() {
         }
     }, [])
 
-    /* ----------------------------- TEK ORDER GETİR ----------------------------- */
     const fetchOrder = useCallback(async (id: string | number | undefined) => {
         if (!id) return
         try {
@@ -48,7 +34,6 @@ export function useOrders() {
         }
     }, [])
 
-    /* ----------------------------- ORDER SEÇ ----------------------------- */
     const selectOrder = useCallback(
         (orderId: number) => {
             const found = orders.find((o) => o.id === orderId)
@@ -57,19 +42,18 @@ export function useOrders() {
         [orders]
     )
 
-    /* ----------------------------- ORDER EKLE ----------------------------- */
     const addOrder = useCallback(async (data: Partial<Order>) => {
         try {
             setError(null)
-            const res = await api.postRequest("/orders", data)
+            const res = await api.post("/orders", data)
             setOrders((prev) => [...prev, res.data])
+            localStorage.removeItem("cart_v1")
+            window.dispatchEvent(new CustomEvent("cart:updated", { detail: [] }))
         } catch (err: any) {
             console.error("Error adding order:", err)
             setError("Sipariş eklenirken hata oluştu.")
         }
     }, [])
-
-    /* ----------------------------- ORDER GÜNCELLE ----------------------------- */
     const updateOrder = useCallback(async (id: string | number, data: any) => {
         try {
             const res = await api.put(`/orders/${id}`, data)
@@ -83,7 +67,6 @@ export function useOrders() {
         }
     }, [])
 
-    /* ----------------------------- ORDER SİL ----------------------------- */
     const deleteOrder = useCallback(
         async (id: number) => {
             try {
@@ -98,7 +81,6 @@ export function useOrders() {
         [selectedOrder]
     )
 
-    /* ----------------------------- OTOMATİK YENİLEME ----------------------------- */
     useEffect(() => {
         const now = Date.now()
         if (now - lastFetchRef.current > 5000) {
@@ -107,7 +89,6 @@ export function useOrders() {
         }
     }, [fetchOrders])
 
-    /* ----------------------------- GERİ DÖNENLER ----------------------------- */
     return {
         fetchOrders,
         fetchOrder,

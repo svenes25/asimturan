@@ -3,12 +3,14 @@ import Link from "next/link";
 import { ShoppingCart, Minus, Plus, User, MapPin, Menu, X } from "lucide-react";
 import React, {useEffect, useState} from "react";
 import {useCart} from "@/lib/cart";
+import { useRouter } from "next/navigation";
 
 export default function Header({ user }) {
     const [userMenuOpen, setUserMenuOpen] = useState(false);
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const { cart, updateQuantity, getTotalItems, getTotalPrice, setCart} = useCart();
     const [cartOpen, setCartOpen] = useState(false);
+    const router = useRouter()
     useEffect(() => {
         const onCartUpdated = (e: Event) => {
             const detail = (e as CustomEvent).detail;
@@ -143,7 +145,6 @@ export default function Header({ user }) {
                                                     >
                                                         <div className="flex-1">
                                                             <h4 className="font-medium text-sm">{item.name}</h4>
-                                                            <p className="text-gray-600 text-sm">{item.price}₺</p>
                                                         </div>
                                                         <div className="flex items-center space-x-2">
                                                             <button onClick={() => updateQuantity(item.id, item.quantity - 1)} className="w-6 h-6 flex items-center justify-center bg-gray-200 rounded">
@@ -157,10 +158,10 @@ export default function Header({ user }) {
                                                     </div>
                                                 ))}
                                                 <div className="mt-4 pt-4 border-t">
-                                                    <div className="flex justify-between font-semibold">
-                                                        <span>Toplam: {getTotalPrice()}₺</span>
-                                                    </div>
-                                                    <button className="w-full mt-2 bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700">
+                                                    <button
+                                                        onClick={() => router.push("/payment")}
+                                                        className="w-full mt-2 bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700"
+                                                    >
                                                         Satın Al
                                                     </button>
                                                 </div>

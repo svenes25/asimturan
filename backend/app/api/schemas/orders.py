@@ -13,9 +13,10 @@ class OrdersBase(BaseModel):
     status_detail: str | None = None
 
 class OrdersCreate(OrdersBase):
-    pass
+    detail: List[OrderDetailsBase]
 
 class OrdersRead(OrdersBase):
     id: int
-    detail : List[OrderDetailsBase]
-    model_config = {"from_attributes": True}  # Pydantic v2 uyumlu
+
+    detail: List[OrderDetailsBase]
+    model_config = {"from_attributes": True}

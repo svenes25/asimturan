@@ -5,7 +5,6 @@ import api from "./api";
 
 export function useAuth() {
     const [user, setUser] = useState<any>(() => {
-        // Başlangıçta localStorage'dan oku
         if (typeof window !== "undefined") {
             const storedUser = localStorage.getItem("user");
             return storedUser ? JSON.parse(storedUser) : null;
@@ -15,7 +14,6 @@ export function useAuth() {
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
-    // Kullanıcıyı localStorage'a kaydet
     const saveUser = useCallback((userData: any) => {
         setUser(userData);
         if (typeof window !== "undefined") {
@@ -23,7 +21,6 @@ export function useAuth() {
         }
     }, []);
 
-    // Kullanıcıyı localStorage'dan temizle
     const clearUser = useCallback(() => {
         setUser(null);
         if (typeof window !== "undefined") {

@@ -1,7 +1,6 @@
 from pydantic import BaseModel
 
 class OrderDetailsBase(BaseModel):
-    order_id: int
     product_id: int
     piece: int
     price: float
@@ -11,5 +10,4 @@ class OrderDetailsCreate(OrderDetailsBase):
 
 class OrderDetailsRead(OrderDetailsBase):
     id: int
-
     model_config = {"from_attributes": True}  # Pydantic v2 uyumlu

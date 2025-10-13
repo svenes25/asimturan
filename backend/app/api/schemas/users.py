@@ -24,9 +24,9 @@ class UserRead(UserBase):
     payments: List[PaymentRead] = []
     addresses: list[AddressBase] | None = None
     orders: List[OrdersRead] = []
-
     class Config:
         orm_mode = True
+
 class LoginRequest(BaseModel):
     mail: EmailStr
     password: str
