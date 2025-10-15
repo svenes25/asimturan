@@ -9,6 +9,7 @@ export function useOrders() {
     const [isLoading, setIsLoading] = useState<boolean>(false)
     const [error, setError] = useState<string | null>(null)
     const lastFetchRef = useRef<number>(0)
+    const [total, setTotal] = useState<[]>([])
 
     const fetchOrders = useCallback(async () => {
         try {
@@ -22,17 +23,29 @@ export function useOrders() {
             setIsLoading(false)
         }
     }, [])
-
-    const fetchOrder = useCallback(async (id: string | number | undefined) => {
-        if (!id) return
+    const fetchTotal = useCallback(async () => {
         try {
+            setIsLoading(true)
             setError(null)
-            const res = await api.get(`/orders/${id}`)
-            setOrder(res.data)
+            const res = await api.get("/orders/total-earnings")
+            setTotal(res.data)
         } catch (err: any) {
-            setError(err.message || "Sipariş alınırken hata oluştu.")
+            setError(err.message || "Siparişler alınırken hata oluştu.")
+        } finally {
+            setIsLoading(false)
         }
     }, [])
+
+    const fetchOrder = useCallback(async (id) => {
+        if (!id) return;
+        try {
+            setError(null);
+            const res = await api.get(`/orders/${id}`);
+            setOrder(res.data);
+        } catch (err) {
+            setError(err.message || 'Sipariş alınırken hata oluştu.');
+        }
+    }, [setOrder, setError]);
 
     const selectOrder = useCallback(
         (orderId: number) => {
@@ -85,6 +98,7 @@ export function useOrders() {
         const now = Date.now()
         if (now - lastFetchRef.current > 5000) {
             fetchOrders()
+            fetchTotal()
             lastFetchRef.current = now
         }
     }, [fetchOrders])
@@ -101,5 +115,7 @@ export function useOrders() {
         addOrder,
         updateOrder,
         deleteOrder,
+        fetchTotal,
+        total
     }
 }

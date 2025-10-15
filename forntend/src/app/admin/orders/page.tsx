@@ -9,37 +9,28 @@ import Link from "next/link";
 import {useOrders} from "@/lib/orders";
 export default function OrdersManagement() {
     const [searchTerm, setSearchTerm] = useState("");
-    const {orders} = useOrders()
-    // const sampleOrders = [
-    //     {
-    //         id: 1,
-    //         orderNumber: "ORD-2025-001",
-    //         products: [
-    //             { name: "Premium Wireless Headphones", quantity: 1 },
-    //             { name: "Laptop Stand Pro", quantity: 2 },
-    //         ],
-    //         total: 459.97,
-    //         status: "Hazırlanıyor",
-    //         note: ""
-    //     },
-    //     {
-    //         id: 2,
-    //         orderNumber: "ORD-2025-002",
-    //         products: [
-    //             { name: "Smart Fitness Watch", quantity: 1 },
-    //         ],
-    //         total: 199.99,
-    //         status: "Kargoda",
-    //         note: "Kargo No: 123456"
-    //     }
-    // ];
-    const handleUpdate = (id: number, status: string, note: string) => {
-        setOrders(prev =>
-            prev.map(order =>
-                order.id === id ? { ...order, status, note } : order
-            )
-        );
+    const {orders,updateOrder} = useOrders()
+    const [selectedOrder, setSelectedOrder] = useState({
+        id: "",
+        status: "",
+        status_detail: "",
+    });
+    const handleUpdate = async (id: number, status: string, status_detail: string) => {
+        try {
+            const data = {
+                status,
+                status_detail,
+            };
+
+            await updateOrder(id, data);
+
+            alert("Sipariş başarıyla güncellendi ✅");
+        } catch (err) {
+            console.error("Sipariş güncellenirken hata:", err);
+            alert("Güncelleme sırasında hata oluştu ❌");
+        }
     };
+
     return (
         <div>
             <Header />
@@ -101,7 +92,7 @@ export default function OrdersManagement() {
                                                 </td>
                                                 {/* İçerik */}
                                                 <td className="px-6 py-4 text-sm text-gray-700">
-                                                    {order.detail.map((p, idx) => (
+                                                    {order?.detail?.map((p, idx) => (
                                                         <div key={idx}>
                                                             {p.name} <span className="text-gray-500">x{p.piece}</span>
                                                         </div>
@@ -110,7 +101,7 @@ export default function OrdersManagement() {
 
                                                 {/* Fiyat */}
                                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                                    {order.detail.map((p, idx) => (
+                                                    {order?.detail?.map((p, idx) => (
                                                         <div key={idx}>
                                                             {p.price}₺
                                                         </div>
@@ -137,39 +128,49 @@ export default function OrdersManagement() {
                                                 {/* Yönetim */}
                                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                                     <div className="space-y-2">
+                                                        {/* Durum Seçimi */}
                                                         <select
-                                                            value={order.status}
+                                                            value={selectedOrder.id === order.id ? selectedOrder.status : order.status}
                                                             onChange={(e) =>
-                                                                setOrders(prev =>
-                                                                    prev.map(o =>
-                                                                        o.id === order.id ? { ...o, status: e.target.value } : o
-                                                                    )
-                                                                )
+                                                                setSelectedOrder({
+                                                                    id: order.id,
+                                                                    status: e.target.value,
+                                                                    status_detail: selectedOrder.id === order.id ? selectedOrder.status_detail : order.status_detail,
+                                                                })
                                                             }
                                                             className="border rounded px-2 py-1 text-sm w-32"
                                                         >
+                                                            <option value="Beklemede">Beklemede</option>
                                                             <option value="Hazırlanıyor">Hazırlanıyor</option>
                                                             <option value="Kargoda">Kargoda</option>
                                                             <option value="Teslim Edildi">Teslim Edildi</option>
                                                             <option value="İptal Edildi">İptal Edildi</option>
                                                         </select>
 
+                                                        {/* Not Alanı */}
                                                         <input
                                                             type="text"
                                                             placeholder="Not"
-                                                            value={order.status_detail}
+                                                            value={selectedOrder.id === order.id ? selectedOrder.status_detail : order.status_detail}
                                                             onChange={(e) =>
-                                                                setOrders(prev =>
-                                                                    prev.map(o =>
-                                                                        o.id === order.id ? { ...o, status_detail: e.target.value } : o
-                                                                    )
-                                                                )
+                                                                setSelectedOrder({
+                                                                    id: order.id,
+                                                                    status: selectedOrder.id === order.id ? selectedOrder.status : order.status,
+                                                                    status_detail: e.target.value,
+                                                                })
                                                             }
                                                             className="border rounded px-2 py-1 text-sm w-40"
                                                         />
 
+                                                        {/* Kaydet Butonu */}
                                                         <button
-                                                            onClick={() => handleUpdate(order.id, order.status, order.status_detail)}
+                                                            onClick={() =>
+                                                                handleUpdate(
+                                                                    order.id,
+                                                                    selectedOrder.id === order.id ? selectedOrder.status : order.status,
+                                                                    selectedOrder.id === order.id ? selectedOrder.status_detail : order.status_detail
+                                                                )
+                                                            }
                                                             className="bg-purple-600 text-white px-3 py-1 rounded text-sm hover:bg-purple-700"
                                                         >
                                                             Kaydet

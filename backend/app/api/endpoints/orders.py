@@ -2,13 +2,14 @@ import logging
 from typing import List
 
 from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy import func
 from sqlalchemy.orm import Session, joinedload
 from ..database import get_db
 from ..models.order_details import OrderDetails
 from ..models.orders import Orders
 from ..models.product import Product
 from ..models.users import User
-from ..schemas.orders import OrdersCreate, OrdersRead
+from ..schemas.orders import OrdersCreate, OrdersRead, OrdersUpdate
 
 router = APIRouter(prefix="/orders", tags=["orders"])
 @router.get("/")
@@ -48,12 +49,47 @@ def get_orders_read(db: Session = Depends(get_db)):
         })
 
     return result
-@router.get("/{id}", response_model=OrdersRead)
+@router.get("/total-earnings")
+def get_total_earnings(db: Session = Depends(get_db)):
+    total = (
+        db.query(func.sum(OrderDetails.price * OrderDetails.piece))
+        .scalar()
+    )
+    return float(total or 0)
+@router.get("/{id}")
 def get_order(id: int, db: Session = Depends(get_db)):
-    order = db.query(Orders).filter(Orders.id == id).first()
-    if not order:
+    # 1. Siparişi bul
+    db_order = db.query(Orders).filter(Orders.id == id).first()
+    if not db_order:
         raise HTTPException(status_code=404, detail="Order not found")
-    return order
+
+    user = db.query(User).filter(User.id == db_order.user_id).first()
+    details_raw = db.query(OrderDetails).filter(OrderDetails.order_id == db_order.id).all()
+    details = []
+    for d in details_raw:
+        product = db.query(Product).filter(Product.id == d.product_id).first()
+        details.append({
+            "product_id": d.product_id,
+            "piece": d.piece,
+            "price": d.price,
+            "name": product.name if product else None,
+            "image": product.image_url if product else None
+        })
+
+    return {
+        "id": db_order.id,
+        "user_id": db_order.user_id,
+        "user_name": user.name if user else None,
+        "user_surname": user.surname if user else None,
+        "user_email": user.mail if user else None,
+        "user_tel": user.tel if user else None,
+        "user_address": user.addresses if user else None,
+        "time": db_order.time,
+        "status": db_order.status,
+        "status_detail": db_order.status_detail,
+        "detail": details
+    }
+
 
 @router.post("/")
 def create_order(order: OrdersCreate, db: Session = Depends(get_db)):
@@ -76,7 +112,7 @@ def create_order(order: OrdersCreate, db: Session = Depends(get_db)):
                 price=item.price
             )
             db.add(db_detail)
-        db.commit()  # tüm detayları kaydet
+        db.commit()
 
         # 3️⃣ Son olarak Order’ı dön
         db.refresh(db_order)
@@ -86,16 +122,51 @@ def create_order(order: OrdersCreate, db: Session = Depends(get_db)):
         db.rollback()
         raise HTTPException(status_code=400, detail=f"Sipariş oluşturulamadı: {e}")
 
-@router.put("/{id}", response_model=OrdersRead)
-def update_order(id: int, order: OrdersCreate, db: Session = Depends(get_db)):
+@router.put("/{id}")
+def update_order(id: int, order_update: OrdersUpdate, db: Session = Depends(get_db)):
+    # 1. Siparişi bul
     db_order = db.query(Orders).filter(Orders.id == id).first()
     if not db_order:
         raise HTTPException(status_code=404, detail="Order not found")
-    for key, value in order.dict().items():
+
+    # 2. Sadece gönderilen alanları güncelle
+    for key, value in order_update.dict(exclude_unset=True).items():
         setattr(db_order, key, value)
+
     db.commit()
     db.refresh(db_order)
-    return db_order
+
+    # 3. User bilgilerini çek
+    user = db.query(User).filter(User.id == db_order.user_id).first()
+
+    # 4. OrderDetails ve Product bilgilerini çek
+    details_raw = db.query(OrderDetails).filter(OrderDetails.order_id == db_order.id).all()
+    details = []
+    for d in details_raw:
+        product = db.query(Product).filter(Product.id == d.product_id).first()
+        details.append({
+            "product_id": d.product_id,
+            "piece": d.piece,
+            "price": d.price,
+            "name": product.name if product else None,
+            "image": product.image_url if product else None
+        })
+
+    # 5. Response'u istediğin formatta dön
+    return {
+        "id": db_order.id,
+        "user_id": db_order.user_id,
+        "user_name": user.name if user else None,
+        "user_surname": user.surname if user else None,
+        "user_email": user.mail if user else None,
+        "user_tel": user.tel if user else None,
+        "user_address": user.addresses if user else None,
+        "time": db_order.time,
+        "status": db_order.status,
+        "status_detail": db_order.status_detail,
+        "detail": details
+    }
+
 
 @router.delete("/{id}")
 def delete_order(id: int, db: Session = Depends(get_db)):

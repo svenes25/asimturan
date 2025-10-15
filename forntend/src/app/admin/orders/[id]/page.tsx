@@ -1,30 +1,30 @@
 "use client";
 
-import React, { useState } from "react";
+import React, {useEffect, useState} from "react";
 import { useParams } from "next/navigation";
 import Header from "@/components/header";
 import Footer from "@/components/footer";
 import Sidebar from "@/components/sidebar";
+import {useOrders} from "@/lib/orders";
 
 export default function OrderDetailPage() {
     const params = useParams(); // /orders/[id]
-    const orderId = params?.id || 1;
+    const orderId = Number(params?.id) || 1;
+    const { order, fetchOrder } = useOrders();
 
-    // Demo sipariş verisi
-    const [order, setOrder] = useState({
-        id: orderId,
-        customerName: "Ahmet Yılmaz",
-        email: "ahmet@example.com",
-        date: "2025-09-10",
-        status: "Hazırlanıyor",
-        note: "",
-        total: 320,
-        products: [
-            { id: 1, name: "Kablosuz Kulaklık", quantity: 1, price: 150 },
-            { id: 2, name: "Mouse", quantity: 2, price: 85 },
-    ]
-    });
-
+    useEffect(() => {
+        if (orderId) {
+            fetchOrder(orderId);
+        }
+    }, [orderId, fetchOrder]);
+    const totalPrice = order?.detail?.reduce((accumulator, currentItem) => {
+        // Check if both 'piece' and 'price' are valid numbers
+        if (typeof currentItem.piece === 'number' && typeof currentItem.price === 'number') {
+            return accumulator + (currentItem.piece * currentItem.price);
+        }
+        // If a value is missing or invalid, don't add to the total
+        return accumulator;
+    }, 0);
     return (
         <div>
             <Header/>
@@ -41,15 +41,16 @@ export default function OrderDetailPage() {
 
                     {/* Main */}
                     <div className="flex-1 space-y-6">
-                        <h1 className="text-2xl font-bold">Sipariş Detay #{order.id}</h1>
+                        <h1 className="text-2xl font-bold">Sipariş Detay #{order?.id}</h1>
 
                         {/* Genel Bilgiler */}
                         <div className="bg-white p-6 rounded-lg shadow">
                             <h2 className="text-lg font-semibold mb-4">Genel Bilgiler</h2>
-                            <p><span className="font-medium">Müşteri:</span> {order.customerName} ({order.email})</p>
-                            <p><span className="font-medium">Tarih:</span> {order.date}</p>
-                            <p><span className="font-medium">Durum:</span> {order.status}</p>
-                            <p><span className="font-medium">Toplam:</span> {order.total} TL</p>
+                            <p><span className="font-medium">Müşteri:</span>{order?.user_name + " " + order?.user_surname} ({order?.user_email})</p>
+                            <p><span className="font-medium">Adres:</span> {order?.user_address[0].address}</p>
+                            <p><span className="font-medium">Tarih:</span> {new Date(order?.time).toLocaleDateString('tr-TR')}</p>
+                            <p><span className="font-medium">Durum:</span> {order?.status}</p>
+                            <p><span className="font-medium">Toplam:</span> {totalPrice} TL</p>
                         </div>
 
                         {/* Ürünler */}
@@ -65,12 +66,12 @@ export default function OrderDetailPage() {
                                 </tr>
                                 </thead>
                                 <tbody>
-                                {order.products.map((p) => (
-                                    <tr key={p.id}>
-                                        <td className="px-4 py-2 border">{p.name}</td>
-                                        <td className="px-4 py-2 border">{p.quantity}</td>
-                                        <td className="px-4 py-2 border">{p.price} TL</td>
-                                        <td className="px-4 py-2 border">{p.price * p.quantity} TL</td>
+                                {order?.detail?.map((p) => (
+                                    <tr key={p?.id}>
+                                        <td className="px-4 py-2 border">{p?.name}</td>
+                                        <td className="px-4 py-2 border">{p?.piece}</td>
+                                        <td className="px-4 py-2 border">{p?.price} TL</td>
+                                        <td className="px-4 py-2 border">{p?.price * p?.piece} TL</td>
                                     </tr>
                                 ))}
                                 </tbody>

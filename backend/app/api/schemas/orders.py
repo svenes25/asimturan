@@ -17,6 +17,9 @@ class OrdersCreate(OrdersBase):
 
 class OrdersRead(OrdersBase):
     id: int
-
     detail: List[OrderDetailsBase]
     model_config = {"from_attributes": True}
+
+class OrdersUpdate(BaseModel):
+    status: str
+    status_detail: str
