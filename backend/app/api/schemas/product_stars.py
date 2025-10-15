@@ -7,7 +7,6 @@ class ProductStarsBase(BaseModel):
 
 class ProductStarsCreate(ProductStarsBase):
     pass
-
 class ProductStarsRead(ProductStarsBase):
     id: int
 

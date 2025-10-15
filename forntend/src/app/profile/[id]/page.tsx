@@ -1,19 +1,20 @@
-"use client";
-
-import React, { useState, useEffect } from "react";
+"use client"
+import React, { useState, useEffect, useCallback } from "react";
 import { Star, MessageSquare, Edit3, Check, X } from "lucide-react";
 import Header from "@/components/header";
 import Footer from "@/components/footer";
-import {useUsers} from "@/lib/users";
-import {useAuth} from "@/lib/auth";
-import {useParams} from "next/navigation";
+import { useUsers } from "@/lib/users";
+import { useAuth } from "@/lib/auth";
+import { useParams } from "next/navigation";
+import { useProducts } from "@/lib/products";
 export default function ProfilePage({ onNavigate }) {
-    const params = useParams(); // URL parametrelerini alır
+    const params = useParams();
     const userId = params.id;
     const [editing, setEditing] = useState(false);
-    const {fetchUser,user,updateUser,updateAddress,updatePayment} = useUsers()
-    const [reviewingItem, setReviewingItem] = useState(null);
-    const [reviewData, setReviewData] = useState({ rating: 5, comment: "" });
+    const { fetchUser, user, updateUser, updateAddress, updatePayment ,updatePassword} = useUsers();
+    const { submitProductStar, submitProductComment } = useProducts();
+    const [reviewingItem, setReviewingItem] = useState<ReviewItemState>(null);
+    const [reviewData, setReviewData] = useState({ stars: 5, comment: "" });
     const [formData, setFormData] = useState({
         name: "",
         surname: "",
@@ -21,10 +22,11 @@ export default function ProfilePage({ onNavigate }) {
         tel: "",
         addresses: [],
         payment: { name: "", number: "", date: "", cvv: "" },
-        orders: []
+        orders: [],
+        currentPassword: "",
+        newPassword: "",
+        confirmPassword: "",
     });
-
-// useEffect içinde
     useEffect(() => {
         if (user) {
             setFormData({
@@ -33,25 +35,25 @@ export default function ProfilePage({ onNavigate }) {
                 mail: user.mail || "",
                 tel: user.tel || "",
                 addresses: user.addresses || [],
+                // payments bir liste olduğu için ilk elemanı alıyoruz
                 payment: user.payments?.[0] || { name: "", number: "", date: "", cvv: "" },
                 orders: user.orders || []
             });
         }
     }, [user]);
-
     useEffect(() => {
         const getUser = async () => {
             if (!userId) {
-                // userId yoksa login sayfasına yönlendir
                 onNavigate && onNavigate("login");
                 return;
             }
+            // fetchUser, userId'yi string olarak alır ve API'ye gönderir.
+            // API'deki endpoint'in bunu int olarak işlemesi beklenir.
             await fetchUser(userId);
         };
 
         getUser();
     }, [userId, fetchUser, onNavigate]);
-
     const handleChange = (e, field, addrIndex = null) => {
         if (field === "addresses" && addrIndex !== null) {
             const newAddresses = [...formData.addresses];
@@ -63,7 +65,6 @@ export default function ProfilePage({ onNavigate }) {
             setFormData({ ...formData, [e.target.name]: e.target.value });
         }
     };
-
     const handleSave = async () => {
         try {
             await updateUser(userId, {
@@ -75,7 +76,10 @@ export default function ProfilePage({ onNavigate }) {
             const firstAddressObj = (formData.addresses || []).find(a => (a.address || "").trim() !== "");
             const addressString = firstAddressObj ? firstAddressObj.address : "";
 
+            // Adres güncelleme (API'nin tek adres stringi beklediği varsayımıyla)
             await updateAddress(userId, { address: addressString });
+
+            // Ödeme güncelleme (API'nin tek ödeme objesi beklediği varsayımıyla)
             await updatePayment(userId, {
                 name: formData.payment.name,
                 number: formData.payment.number,
@@ -90,37 +94,87 @@ export default function ProfilePage({ onNavigate }) {
             alert("Güncelleme sırasında hata oluştu!");
         }
     };
-
-
-    const startReview = (orderId, itemIndex) => {
+    const startReview = (orderId: number, itemIndex: number) => {
         const order = user.orders.find(o => o.id === orderId);
-        const item = order.items[itemIndex];
+        if (!order) return;
+
+        const item = order.detail[itemIndex];
         setReviewingItem({ orderId, itemIndex });
+
+        // Mevcut puan/yorum varsa formu onunla doldur
         setReviewData({
-            rating: item.rating || 5,
+            stars: item.stars || 5,
             comment: item.comment || ""
         });
     };
+    const saveReview = async () => {
+        if (!reviewingItem || !user || !user.orders) return;
 
-    const saveReview = () => {
-        const orderIndex = user.orders.findIndex(o => o.id === reviewingItem.orderId);
-        user.orders[orderIndex].items[reviewingItem.itemIndex] = {
-            ...user.orders[orderIndex].items[reviewingItem.itemIndex],
-            rating: reviewData.rating,
+        // Sipariş ve Ürün detaylarını bulma
+        const order = user.orders.find(o => o.id === reviewingItem.orderId);
+        const item = order?.detail[reviewingItem.itemIndex];
+
+        if (!order || !item || !userId) return;
+
+        if (reviewData.comment.length < 5) {
+            alert("Lütfen en az 5 karakterlik bir yorum girin.");
+            return;
+        }
+
+        const numericUserId = Number(userId);
+
+        const reviewStarData: ProductStarCreate = {
+            product_id: item.product_id,
+            user_id: numericUserId,
+            stars: reviewData.stars
+        };
+        const reviewCommentData: ProductCommentCreate = {
+            product_id: item.product_id,
+            user_id: numericUserId,
             comment: reviewData.comment
         };
 
-        setReviewingItem(null);
-        setReviewData({ rating: 5, comment: "" });
-        alert("Review saved successfully!");
-    };
+        try {
+            const sresult = await submitProductStar(reviewStarData);
 
+            // 2. Yorumu Gönder (submitProductComment, POST/PUT kararını kendi verir)
+            const cresult = await submitProductComment(reviewCommentData);
+
+            if (sresult && cresult) {
+                // Başarılı olursa, yerel state'i güncelle (sayfa yenilemeden yeni puanı göster)
+                const newOrders = formData.orders.map(o => {
+                    if (o.id === reviewingItem.orderId) {
+                        const newDetails = o.detail.map((d, idx) => {
+                            if (idx === reviewingItem.itemIndex) {
+                                // Yeni puan ve yorumu ekle
+                                return {
+                                    ...d,
+                                    stars: reviewData.stars,
+                                    comment: reviewData.comment
+                                };
+                            }
+                            return d;
+                        });
+                        return { ...o, detail: newDetails };
+                    }
+                    return o;
+                });
+
+                setFormData(prev => ({ ...prev, orders: newOrders }));
+                setReviewingItem(null);
+                setReviewData({ stars: 5, comment: "" });
+            }
+        } catch(error) {
+            console.error("Review save failed:", error);
+            alert("İnceleme kaydedilirken beklenmedik bir hata oluştu.");
+        }
+    };
     const cancelReview = () => {
         setReviewingItem(null);
-        setReviewData({ rating: 5, comment: "" });
+        setReviewData({ stars: 5, comment: "" });
     };
-
-    const renderStars = (rating, interactive = false, onStarClick = null) => {
+    const renderStars = (stars, interactive = false, onStarClick = null) => {
+        const safeRating = Math.round(stars || 0);
         return (
             <div className="flex space-x-1">
                 {[1, 2, 3, 4, 5].map((star) => (
@@ -133,31 +187,51 @@ export default function ProfilePage({ onNavigate }) {
                     >
                         <Star
                             size={interactive ? 24 : 16}
-                            className={star <= rating ? "text-yellow-400 fill-current" : "text-gray-300"}
+                            className={star <= safeRating ? "text-yellow-400 fill-current" : "text-gray-300"}
                         />
                     </button>
                 ))}
             </div>
         );
     };
-
     if (!user) {
         return (
             <div className="py-8">
                 <div className="container mx-auto px-4 text-center">
-                    <h1 className="text-3xl font-bold mb-4">Access Denied</h1>
-                    <p className="text-gray-600 mb-8">Please log in to view your profile.</p>
+                    <h1 className="text-3xl font-bold mb-4">Erişim Engellendi</h1>
+                    <p className="text-gray-600 mb-8">Profilinizi görüntülemek için lütfen giriş yapın.</p>
                     <button
                         onClick={() => onNavigate && onNavigate("login")}
                         className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700"
                     >
-                        Login
+                        Giriş Yap
                     </button>
                 </div>
             </div>
         );
     }
+    const handleChangePassword = async () => {
+        // Önce şifrelerin eşleştiğinden emin ol
+        if (formData.newPassword !== formData.confirmPassword) {
+            alert("Yeni şifreler eşleşmiyor!");
+            return;
+        }
 
+        try {
+            const response = await updatePassword(user?.id,formData.currentPassword,formData.newPassword)
+            alert("Şifre başarıyla değiştirildi!");
+            setFormData(prev => ({
+                ...prev,
+                currentPassword: "",
+                newPassword: "",
+                confirmPassword: ""
+            }));
+            setEditing(false)
+        } catch (error: any) {
+            console.error(error);
+            alert(error.message || "Şifre değiştirilemedi");
+        }
+    };
     return (
         <div>
             <Header />
@@ -187,7 +261,7 @@ export default function ProfilePage({ onNavigate }) {
                                             type="text"
                                             name={field}
                                             value={formData[field]}
-                                            onChange={handleChange}
+                                            onChange={(e) => handleChange(e, field)}
                                             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                                         />
                                     ) : (
@@ -206,7 +280,7 @@ export default function ProfilePage({ onNavigate }) {
                                             type={field === "mail" ? "mail" : "tel"}
                                             name={field}
                                             value={formData[field]}
-                                            onChange={handleChange}
+                                            onChange={(e) => handleChange(e, field)}
                                             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                                         />
                                     ) : (
@@ -215,7 +289,55 @@ export default function ProfilePage({ onNavigate }) {
                                 </div>
                             ))}
                         </div>
-
+                        {editing && (
+                        <div className="mb-4">
+                            <h3 className="text-lg font-semibold mb-2">Şifre Değiştir</h3>
+                            <div className="space-y-3">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                        Mevcut Şifre
+                                    </label>
+                                    <input
+                                        type="password"
+                                        name="currentPassword"
+                                        value={formData.currentPassword || ""}
+                                        onChange={handleChange}
+                                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                        Yeni Şifre
+                                    </label>
+                                    <input
+                                        type="password"
+                                        name="newPassword"
+                                        value={formData.newPassword || ""}
+                                        onChange={handleChange}
+                                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                        Tekrar Yeni Şifre
+                                    </label>
+                                    <input
+                                        type="password"
+                                        name="confirmPassword"
+                                        value={formData.confirmPassword || ""}
+                                        onChange={handleChange}
+                                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                    />
+                                </div>
+                                <button
+                                    onClick={handleChangePassword}
+                                    className="mt-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                                >
+                                    Şifreyi Güncelle
+                                </button>
+                            </div>
+                        </div>
+                            )}
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-2">Üyelik Tarihi</label>
                             <p className="text-gray-900">{new Date(user.created_at).toLocaleString()}</p>
@@ -226,7 +348,7 @@ export default function ProfilePage({ onNavigate }) {
                     <div className="bg-white rounded-lg shadow-md p-6 mb-6">
                         <h2 className="text-xl font-semibold mb-4">Adres</h2>
                         {editing ? (
-                            formData.addresses.map((addr, idx) => (
+                            formData?.addresses.map((addr, idx) => (
                                 <input
                                     key={idx}
                                     type="text"
@@ -242,7 +364,7 @@ export default function ProfilePage({ onNavigate }) {
                                 />
                             ))
                         ) : (
-                            <p className="text-gray-900">{formData.addresses[0]?.address}</p>
+                            <p className="text-gray-900">{formData.addresses[0]?.address || "Adres Bilgisi Yok"}</p>
                         )}
                     </div>
                     {/* Payment Info */}
@@ -274,12 +396,8 @@ export default function ProfilePage({ onNavigate }) {
                                         maxLength={16}
                                         value={formData.payment?.number || ""}
                                         onChange={(e) => {
-                                            // Sadece rakam bırak, boşluk ve diğer karakterleri çıkar
                                             const digits = e.target.value.replace(/\D/g, "");
-                                            // Opsiyonel: maksimum 16 hane (kart numarası) ile sınırlama
                                             const limited = digits.slice(0, 16);
-                                            // Doğrudan e.target.value'yi değil, handleChange ile state'i güncelle
-                                            // handleChange beklediği şekilde bir event benzeri obje oluştur
                                             handleChange({ target: { name: e.target.name, value: limited } }, "payment");
                                         }}
                                         className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -287,7 +405,7 @@ export default function ProfilePage({ onNavigate }) {
                                         autoComplete="cc-number"
                                         aria-label="Kart numarası"
                                     />
-                                    <p className="text-xs text-gray-500 mt-1">Boşluklarla ayrılmış 16 haneli kart numarası</p>
+                                    <p className="text-xs text-gray-500 mt-1">Boşluksuz 16 haneli kart numarası</p>
                                 </label>
 
                                 <div className="grid grid-cols-2 gap-3">
@@ -298,7 +416,6 @@ export default function ProfilePage({ onNavigate }) {
                                             type="text"
                                             value={formData.payment?.date || ""}
                                             onChange={(e) => {
-                                                // opsiyonel: MM/YY formatına kısmi maskeleme
                                                 let v = e.target.value.replace(/[^\d]/g, "");
                                                 if (v.length > 2) v = v.slice(0, 2) + "/" + v.slice(2, 4);
                                                 e.target.value = v;
@@ -354,7 +471,7 @@ export default function ProfilePage({ onNavigate }) {
                                 onClick={() => setEditing(false)}
                                 className="bg-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-400 mr-4"
                             >
-                                Cancel
+                                İptal
                             </button>
                         </div>
                     )}
@@ -362,36 +479,36 @@ export default function ProfilePage({ onNavigate }) {
                     {/* Orders with Reviews */}
                     <div className="bg-white rounded-lg shadow-md p-6">
                         <h2 className="text-xl font-semibold mb-4">Siparişler</h2>
-                        {user?.orders?.map(order => (
+                        {formData?.orders?.map(order => (
                             <div key={order.id} className="mb-6 border-b pb-6">
                                 <div className="flex justify-between items-start mb-4">
                                     <div>
-                                        <p className="font-semibold text-lg">Order {order.id}</p>
-                                        <p className="text-gray-600 text-sm">Placed on {new Date(order.date).toLocaleDateString()}</p>
+                                        <p className="font-semibold text-lg">Sipariş {order.id}</p>
+                                        <p className="text-gray-600 text-sm">Tarih {new Date(order.time).toLocaleDateString()}</p>
                                     </div>
                                     <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-                                        order.status === 'Delivered' ? 'bg-green-100 text-green-800' :
-                                            order.status === 'Shipped' ? 'bg-blue-100 text-blue-800' :
+                                        order.status === 'Teslim Edildi' ? 'bg-green-100 text-green-800' :
+                                            order.status === 'Kargoda' ? 'bg-blue-100 text-blue-800' :
                                                 'bg-yellow-100 text-yellow-800'}`}>
                                         {order.status}
                                     </span>
                                 </div>
 
                                 <div className="space-y-4">
-                                    {order.items.map((item, itemIndex) => (
+                                    {order?.detail?.map((item, itemIndex) => (
                                         <div key={itemIndex} className="bg-gray-50 p-4 rounded-lg">
                                             <div className="flex justify-between items-start mb-3">
                                                 <div className="flex-1">
-                                                    <h4 className="font-semibold text-gray-900">{item.name}</h4>
-                                                    <p className="text-gray-600">Quantity: {item.quantity} × ${item.price}</p>
+                                                    <h4 className="font-semibold text-gray-900">{item.product_name}</h4>
+                                                    <p className="text-gray-600">Adet: {item.piece} × {item.price}₺</p>
                                                 </div>
                                                 <div className="text-right">
-                                                    <p className="font-semibold">${(item.price * item.quantity).toFixed(2)}</p>
+                                                    <p className="font-semibold">{item.piece * item.price}₺</p> {/* Toplam sipariş fiyatını gösteriyor, ürün fiyatı değil */}
                                                 </div>
                                             </div>
 
                                             {/* Review Section */}
-                                            {order.status === 'Delivered' && (
+                                            {order.status === 'Teslim Edildi' && (
                                                 <div className="mt-4 pt-4 border-t border-gray-200">
                                                     {reviewingItem &&
                                                     reviewingItem.orderId === order.id &&
@@ -400,15 +517,15 @@ export default function ProfilePage({ onNavigate }) {
                                                         <div className="space-y-4">
                                                             <div>
                                                                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                                                                    Your Rating
+                                                                    Puanınız
                                                                 </label>
-                                                                {renderStars(reviewData.rating, true, (rating) =>
-                                                                    setReviewData({ ...reviewData, rating })
+                                                                {renderStars(reviewData.stars, true, (stars) =>
+                                                                    setReviewData({ ...reviewData, stars })
                                                                 )}
                                                             </div>
                                                             <div>
                                                                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                                                                    Your Review
+                                                                    Yorumunuz
                                                                 </label>
                                                                 <textarea
                                                                     value={reviewData.comment}
@@ -416,50 +533,48 @@ export default function ProfilePage({ onNavigate }) {
                                                                         ...reviewData, comment: e.target.value
                                                                     })}
                                                                     className="w-full p-3 border border-gray-300 rounded-lg resize-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                                                    rows="3"
-                                                                    placeholder="Share your experience with this product..."
+                                                                    rows={3}
+                                                                    placeholder="Ürün hakkındaki deneyiminizi paylaşın..."
                                                                 />
                                                             </div>
                                                             <div className="flex space-x-2">
                                                                 <button
                                                                     onClick={saveReview}
-                                                                    className="flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                                                                    disabled={!reviewData.comment || reviewData.comment.length < 5}
+                                                                    className="flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50"
                                                                 >
                                                                     <Check size={16} className="mr-2" />
-                                                                    Save Review
+                                                                    Kaydet
                                                                 </button>
                                                                 <button
                                                                     onClick={cancelReview}
                                                                     className="flex items-center px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors"
                                                                 >
                                                                     <X size={16} className="mr-2" />
-                                                                    Cancel
+                                                                    İptal
                                                                 </button>
                                                             </div>
                                                         </div>
                                                     ) : (
                                                         // Display Review or Review Button
-                                                        <div>
-                                                            {item.rating ? (
-                                                                <div className="space-y-2">
-                                                                    <div className="flex items-center justify-between">
-                                                                        <div className="flex items-center space-x-2">
-                                                                            <span className="text-sm text-gray-600">Your Review:</span>
-                                                                            {renderStars(item.rating)}
-                                                                        </div>
-                                                                        <button
-                                                                            onClick={() => startReview(order.id, itemIndex)}
-                                                                            className="flex items-center text-blue-600 hover:text-blue-800 text-sm"
-                                                                        >
-                                                                            <Edit3 size={14} className="mr-1" />
-                                                                            Edit
-                                                                        </button>
+                                                        <div className="space-y-2">
+                                                            {item.stars || item.comment ? (
+                                                                <div className="flex items-center justify-between">
+                                                                    <div>
+                                                                        {renderStars(item.stars)}
+                                                                        {item.comment && (
+                                                                            <p className="text-gray-700 text-sm bg-white p-2 rounded border mt-1">
+                                                                                "{item.comment}"
+                                                                            </p>
+                                                                        )}
                                                                     </div>
-                                                                    {item.comment && (
-                                                                        <p className="text-gray-700 text-sm bg-white p-3 rounded border">
-                                                                            "{item.comment}"
-                                                                        </p>
-                                                                    )}
+                                                                    <button
+                                                                        onClick={() => startReview(order.id, itemIndex)}
+                                                                        className="flex items-center text-blue-600 hover:text-blue-800 text-sm ml-2"
+                                                                    >
+                                                                        <Edit3 size={14} className="mr-1" />
+                                                                        Düzenle
+                                                                    </button>
                                                                 </div>
                                                             ) : (
                                                                 <button
@@ -467,7 +582,7 @@ export default function ProfilePage({ onNavigate }) {
                                                                     className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
                                                                 >
                                                                     <MessageSquare size={16} className="mr-2" />
-                                                                    Write a Review
+                                                                    Yorum Yap
                                                                 </button>
                                                             )}
                                                         </div>
@@ -479,7 +594,7 @@ export default function ProfilePage({ onNavigate }) {
                                 </div>
 
                                 <div className="flex justify-end mt-4">
-                                    <p className="font-bold text-lg">Total: ${order.total}</p>
+                                    <p className="font-bold text-lg">Toplam Sipariş Tutarı: {order.total}₺</p>
                                 </div>
                             </div>
                         ))}
