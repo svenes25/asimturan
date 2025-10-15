@@ -83,7 +83,7 @@ export default function ProductsManagement() {
                                     <thead className="bg-gray-50">
                                     <tr>
                                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">İsim</th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Son Güncelleme</th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Telefon</th>
                                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Butonlar</th>
                                     </tr>
                                     </thead>
@@ -103,7 +103,7 @@ export default function ProductsManagement() {
                                                     </div>
                                                 </div>
                                             </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{new Date(admin?.updated_at).toLocaleString()}</td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{admin.tel}</td>
 
                                             <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
                                                 <button

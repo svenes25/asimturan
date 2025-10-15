@@ -5,42 +5,43 @@ import React, { useState } from "react";
 import Header from "@/components/header";
 import Footer from "@/components/footer";
 import Sidebar from "@/components/sidebar";
+import {useProducts} from "@/lib/products";
 
 export default function ProductsManagement() {
-    const sampleComments = [
-        {
-            id: 1,
-            productName: "Wireless Headphones",
-            orderNumber: "ORD-20250101",
-            name: "Alice Johnson",
-            email: "alice@example.com",
-            message: "Kulaklık çok kaliteli ama bas seviyesi biraz düşük.",
-            date: "2025-01-15",
-            status: "New"
-        },
-        {
-            id: 2,
-            productName: "Laptop Stand",
-            orderNumber: "ORD-20250105",
-            name: "Bob Smith",
-            email: "bob@example.com",
-            message: "Siparişim hızlı geldi, ürün beklediğim gibi.",
-            date: "2025-01-14",
-            status: "In Progress"
-        },
-        {
-            id: 3,
-            productName: "Laptop Stand",
-            orderNumber: "ORD-20250105",
-            name: "Bob Smith",
-            email: "bob@example.com",
-            message: "Siparişim hızlı geldi, ürün beklediğim gibi.",
-            date: "2025-01-14",
-            status: "In Progress"
-        }
-    ];
-
-    const [comments, setComments] = useState(sampleComments);
+    const {productsComments:comments} = useProducts()
+    // const sampleComments = [
+    //     {
+    //         id: 1,
+    //         productName: "Wireless Headphones",
+    //         orderNumber: "ORD-20250101",
+    //         name: "Alice Johnson",
+    //         email: "alice@example.com",
+    //         message: "Kulaklık çok kaliteli ama bas seviyesi biraz düşük.",
+    //         date: "2025-01-15",
+    //         status: "New"
+    //     },
+    //     {
+    //         id: 2,
+    //         productName: "Laptop Stand",
+    //         orderNumber: "ORD-20250105",
+    //         name: "Bob Smith",
+    //         email: "bob@example.com",
+    //         message: "Siparişim hızlı geldi, ürün beklediğim gibi.",
+    //         date: "2025-01-14",
+    //         status: "In Progress"
+    //     },
+    //     {
+    //         id: 3,
+    //         productName: "Laptop Stand",
+    //         orderNumber: "ORD-20250105",
+    //         name: "Bob Smith",
+    //         email: "bob@example.com",
+    //         message: "Siparişim hızlı geldi, ürün beklediğim gibi.",
+    //         date: "2025-01-14",
+    //         status: "In Progress"
+    //     }
+    // ];
+    console.log(comments)
 
     return (
         <div>
@@ -66,13 +67,6 @@ export default function ProductsManagement() {
                                             <div className="flex-1">
                                                 <div className="flex items-center mb-2">
                                                     <h3 className="text-lg font-semibold">{comment.productName}</h3>
-                                                    <span className={`ml-3 px-2 py-1 text-xs font-semibold rounded-full ${
-                                                        comment.status === "New" ? "bg-blue-100 text-blue-800" :
-                                                            comment.status === "In Progress" ? "bg-yellow-100 text-yellow-800" :
-                                                                "bg-green-100 text-green-800"
-                                                    }`}>
-                                                        {comment.status}
-                                                    </span>
                                                 </div>
 
                                                 <div className="text-sm text-gray-600 mb-2">
@@ -80,11 +74,11 @@ export default function ProductsManagement() {
                                                 </div>
 
                                                 <div className="text-sm text-gray-600 mb-2">
-                                                    <span className="font-medium">Kimden:</span> {comment.name} ({comment.email})
+                                                    <span className="font-medium">Kimden:</span> {comment.user_name} {comment.user_surname} ({comment.email})
                                                 </div>
 
                                                 <div className="text-sm text-gray-600 mb-4">
-                                                    <span className="font-medium">Tarih:</span> {comment.date}
+                                                    <span className="font-medium">Tarih:</span> <p>{new Date(comment.date).toLocaleString('tr-TR')}</p>
                                                 </div>
 
                                                 <p className="text-gray-700">{comment.message}</p>

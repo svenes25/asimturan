@@ -9,10 +9,12 @@ from starlette.responses import JSONResponse
 
 from ..database import get_db
 from ..models.categories import Categories
+from ..models.order_details import OrderDetails
 from ..models.product import Product
 from ..models.product_comments import ProductCommentsModel
 from ..models.product_stars import ProductStarsModel
 from ..models.product_categories import ProductCategories
+from ..models.users import User
 from ..schemas.product import ProductCreate, ProductRead, ProductBase, ProductComments,ProductStars
 
 router = APIRouter(prefix="/products", tags=["products"])
@@ -82,63 +84,38 @@ def products_stars(db: Session = Depends(get_db)):
         })
     return result
 
-@router.get("/comments", response_model=List[ProductComments])
-def products_comments(db: Session = Depends(get_db)):
-    products = db.query(Product).all()
+@router.get("/comments")
+def get_product_comments(db: Session = Depends(get_db)):
+    comments = (
+        db.query(
+            ProductCommentsModel.id.label("id"),
+            Product.name.label("productName"),
+            OrderDetails.order_id.label("orderNumber"),
+            User.name.label("user_name"),
+            User.surname.label("user_surname"),
+            User.mail.label("email"),
+            ProductCommentsModel.comment.label("message"),
+            ProductCommentsModel.created_at.label("date")
+        )
+        .join(User, User.id == ProductCommentsModel.user_id)
+        .join(Product, Product.id == ProductCommentsModel.product_id)
+        .outerjoin(OrderDetails, OrderDetails.product_id == Product.id)
+        .all()
+    )
+
     result = []
-    for p in products:
-        category_rows = (
-            db.query(Categories)
-            .join(ProductCategories)
-            .filter(ProductCategories.product_id == p.id)
-            .all()
-        )
-        stars_data = (
-            db.query(
-                func.count(ProductStars.id).label("star_count"),
-                func.avg(ProductStars.stars).label("star_avg"),
-            )
-            .filter(ProductStars.product_id == p.id)
-            .first()
-        )
-        stars_alias = aliased(ProductStars)
-        comments = (
-            db.query(
-                ProductComments.id.label("comment_id"),
-                ProductComments.user_id,
-                ProductComments.comment,
-                ProductComments.created_at,
-                stars_alias.stars.label("user_stars")  # yorum yapanın verdiği stars
-            )
-            .outerjoin(
-                stars_alias,
-                (ProductComments.user_id == stars_alias.user_id) &
-                (stars_alias.product_id == product_id)
-            )
-            .filter(ProductComments.product_id == product_id)
-            .all()
-        )
-        for comment in comments:
-            result.append({
-                "id": p.id,
-                "name": p.name,
-                "price": float(p.price),
-                "lower": p.lower,
-                "limited_price": float(p.limited_price) if p.limited_price else None,
-                "description": p.description,
-                "image_url": p.image_url,
-                "created_at": p.created_at,
-                "updated_at": p.updated_at,
-                "categories": category_rows,
-                "star_count": stars_data.star_count or 0,
-                "star_avg": round(float(stars_data.star_avg), 2) if stars_data.star_avg else 0.0,
-                "user_id":comment.user_id,
-                "user_name":comment.user_name,
-                "user_surname":comment.user_surname,
-                "user_comment":comment.comment,
-                "user_star" : comment.star,
-                "c_created_at":comment.created_at
-            })
+    for c in comments:
+        result.append({
+            "id": c.id,
+            "productName": c.productName,
+            "orderNumber": c.orderNumber,
+            "user_name": c.user_name,
+            "user_surname": c.user_surname,
+            "email": c.email,
+            "message": c.message,
+            "date": c.date
+        })
+
     return result
 
 # Tek ürün getir

@@ -1,52 +1,15 @@
 import { useState, useEffect, useCallback } from "react";
 import api from "@/lib/api.ts";
-
-// Assuming these types are defined in your application context
-type Product = {
-    id: number;
-    name: string;
-    description: string;
-    price: number;
-    imageUrl?: string;
-};
-
-// Yeni ProductStarsCreate şemasına karşılık gelen tip tanımı
-type ProductStarCreate = {
-    product_id: number;
-    user_id: number;
-    stars: number;
-};
-
-// Ürün yıldız (star) modelinin API'den dönen tam hali
-type ProductStar = ProductStarCreate & {
-    id: number;
-    created_at: string;
-    updated_at: string;
-};
-
-// Yorum (Comment) modelinin API'den dönen tam hali
-type ProductCommentCreate = {
-    product_id: number;
-    user_id: number;
-    comment: string;
-};
-
-type ProductComment = ProductCommentCreate & {
-    id: number;
-    created_at: string;
-    updated_at: string;
-};
-
+import ProductDetailPage from "@/app/products/[id]/page";
 
 export function useProducts() {
-    const [products, setProducts] = useState<Product[]>([]);
+    const [products, setProducts] = useState<[]>([]);
     const [productsRead, setProductsRead] = useState<any[]>([]);
-    const [productsStars, setProductsStars] = useState<ProductStar[]>([]); // Tipi güncelledik
-    const [productsComments, setProductsComments] = useState<ProductComment[]>([]); // Tipi güncelledik
-    const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+    const [productsStars, setProductsStars] = useState<[]>([]);
+    const [productsComments, setProductsComments] = useState<[]>([]);
+    const [selectedProduct, setSelectedProduct] = useState<null>(null);
     const [isLoading, setIsLoading] = useState<boolean>(false);
     const [error, setError] = useState<string | null>(null);
-
     const fetchProducts = useCallback(async () => {
         setIsLoading(true);
         setError(null);
@@ -55,13 +18,13 @@ export function useProducts() {
             setProductsRead(readRes.data);
 
             // Stars
-            const starsRes = await api.get("/product_stars");
+            const starsRes = await api.get("/products/stars");
             setProductsStars(starsRes.data);
 
             // Comments (Yorumlar)
-            const commentsRes = await api.get("/product_comments");
+            const commentsRes = await api.get("products/comments");
             setProductsComments(commentsRes.data);
-
+            console.log(productsComments)
         } catch (err: any) {
             setError(err.message || "Ürünler alınamadı.");
         } finally {
@@ -221,7 +184,6 @@ export function useProducts() {
             return null;
         }
     }, [productsComments, setProductsComments]);
-
 
     useEffect(() => {
         fetchProducts();

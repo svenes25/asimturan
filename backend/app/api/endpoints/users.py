@@ -8,9 +8,12 @@ from ..models.product_comments import ProductCommentsModel
 from ..models.product_stars import ProductStarsModel
 from ..models.users import User
 from ..schemas.auth import RegisterRequest, LoginResponse
-from ..schemas.users import UserCreate, UserRead, LoginRequest, UserUpdate, EmailPayload
+from ..schemas.users import UserBase, UserRead, LoginRequest, UserUpdate, EmailPayload
 
 router = APIRouter(prefix="/users", tags=["users"])
+@router.get("/", response_model=list[UserBase])
+def get_users(db: Session = Depends(get_db)):
+    return db.query(User).all()
 @router.get("/{user_id}")
 def get_user(user_id: int, db: Session = Depends(get_db)):
     user_orm = db.query(User).filter(User.id == user_id).first()

@@ -7,7 +7,6 @@ from fastapi.staticfiles import StaticFiles
 app = FastAPI(title="E-Commerce API", version="1.0")
 app.mount("/static", StaticFiles(directory="api/static"), name="static")
 
-# Tüm endpointleri içeren router
 app.include_router(api.router)
 origins = [
     "http://localhost:3000",  # Frontend adresin
