@@ -67,19 +67,19 @@ export default function PaymentPage() {
         }
     }, [cart, campaigns]);
     const [formData, setFormData] = useState({
-        firstName: user.name || "",
-        lastName: user.surname || "",
-        email: user.mail || "",
-        phone: user.tel || "",
+        firstName: user?.name || "",
+        lastName: user?.surname || "",
+        email: user?.mail || "",
+        phone: user?.tel || "",
 
-        address: user.addresses.address || "",
-        cardNumber: user.payments.number ||  "",
-        cardName: user.payments.name || "",
-        expiryDate: user.payments.date || "",
-        cvv: user.payments.cvv || "",
+        address: user?.addresses.address || "",
+        cardNumber: user?.payments.number ||  "",
+        cardName: user?.payments.name || "",
+        expiryDate: user?.payments.date || "",
+        cvv: user?.payments.cvv || "",
 
         // Mobile Payment
-        mobileNumber: user.tel || "",
+        mobileNumber: user?.tel || "",
         mobileProvider: "apple-pay",
 
         saveInfo: false,

@@ -1,6 +1,4 @@
 from pydantic import BaseModel
-from datetime import datetime
-
 class CommunicationBase(BaseModel):
     tel: str
     mail: str

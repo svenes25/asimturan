@@ -63,12 +63,19 @@ export default function LoginPage() {
                         )}
 
                         <div className="bg-blue-50 border border-blue-200 text-blue-700 px-4 py-3 rounded mb-6">
-                            <p className="text-sm">Demo giriş bilgileri:</p>
+                            <p className="text-sm">Admin giriş bilgileri:</p>
                             <p className="text-sm">
-                                <strong>E-posta:</strong> demo@example.com
+                                <strong>E-posta:</strong> admin@gmail.com
                             </p>
                             <p className="text-sm">
-                                <strong>Şifre:</strong> demo123
+                                <strong>Şifre:</strong> admin
+                            </p>
+				<p className="text-sm">User giriş bilgileri:</p>
+                            <p className="text-sm">
+                                <strong>E-posta:</strong> user@gmail.com
+                            </p>
+                            <p className="text-sm">
+                                <strong>Şifre:</strong> user
                             </p>
                         </div>
 

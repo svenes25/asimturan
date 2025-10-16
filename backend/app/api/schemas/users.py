@@ -2,9 +2,9 @@ from pydantic import BaseModel, EmailStr
 from datetime import datetime
 from typing import Optional, List
 
-from api.schemas.address import  AddressBase
-from api.schemas.orders import OrdersRead
-from api.schemas.payment import PaymentRead
+from .address import AddressBase
+from .orders import OrdersRead
+from .payment import PaymentRead
 
 
 class UserBase(BaseModel):

@@ -1,14 +1,14 @@
 "use client";
 
-import React, {useEffect, useState} from "react";
+import React, { useEffect, useState } from "react"; // Suspense importu kaldırıldı
 import { Star } from "lucide-react";
 import Header from "@/components/header";
 import Footer from "@/components/footer";
-import {useRouter, useSearchParams} from "next/navigation";
-import {useCategories} from "@/lib/categories";
-import {useProducts} from "@/lib/products";
-import {useCart} from "@/lib/cart";
-import {useCampaigns} from "@/lib/campaign";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useCategories } from "@/lib/categories";
+import { useProducts } from "@/lib/products";
+import { useCart } from "@/lib/cart";
+import { useCampaigns } from "@/lib/campaign";
 
 export default function ProductsPage() {
     const router = useRouter();
@@ -16,10 +16,13 @@ export default function ProductsPage() {
     const [searchTerm, setSearchTerm] = useState("");
     const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
     const [priceRange, setPriceRange] = useState([0, 10000]);
+
     const { categories } = useCategories();
     const { productsStars: products } = useProducts();
     const { addToCart } = useCart();
-    const { campaigns } = useCampaigns()
+    const { campaigns } = useCampaigns();
+
+    // URL'den kategori okuma
     useEffect(() => {
         const categoryFromUrl = searchParams.get("category");
         if (categoryFromUrl) {
@@ -29,6 +32,8 @@ export default function ProductsPage() {
             setSelectedCategories([]);
         }
     }, [searchParams, categories]);
+
+    // Kategori toggle
     const toggleCategory = (categoryName: string, categoryId: number) => {
         let updatedCategories: string[];
         if (selectedCategories.includes(categoryName)) {
@@ -38,13 +43,14 @@ export default function ProductsPage() {
         }
         setSelectedCategories(updatedCategories);
 
-        // URL güncelle
         if (updatedCategories.length === 0) {
             router.push("/products");
         } else {
             router.push(`/products?category=${categoryId}`);
         }
     };
+
+    // Filtreleme
     const filteredProducts = products.filter(product => {
         const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase());
         const productCategoryNames = product.categories?.map(c => c.name) || [];
@@ -54,23 +60,16 @@ export default function ProductsPage() {
         const matchesPrice = product.price >= priceRange[0] && product.price <= priceRange[1];
         return matchesSearch && matchesCategory && matchesPrice;
     });
+
+    // İndirimli fiyat
     const getDiscountedPrice = (product: any) => {
         if (!campaigns || campaigns.length === 0) return product.price;
 
         const campaign = campaigns.find(c => {
-            // Ürün kampanya ürünlerinde varsa
             const isProductIncluded = c.products?.some((p: any) => p.id === product.id);
-
             const isCategoryIncluded = c.categories?.some((cat: any) =>
-                product.categories?.some((pcat: any) => {
-                    const match = pcat.id === cat.id;
-                    if (match == true) {
-                        console.log("Ürün kategorisi:", pcat, "Kampanya kategorisi:", cat, "Eşleşme:", match);
-                    }
-                    return match;
-                })
+                product.categories?.some((pcat: any) => pcat.id === cat.id)
             );
-
             return isProductIncluded || isCategoryIncluded;
         });
 
@@ -85,9 +84,8 @@ export default function ProductsPage() {
         return product.price;
     };
 
-
     return (
-        <div>
+        <> {/* Suspense kaldırıldı, sadece Fragment (<>) kullanılıyor */}
             <Header />
             <div className="container mx-auto px-4 py-8 flex flex-col lg:flex-row gap-8">
                 {/* Sidebar */}
@@ -113,7 +111,7 @@ export default function ProductsPage() {
                                 <input
                                     type="checkbox"
                                     checked={selectedCategories.includes(cat.name)}
-                                    onChange={() => toggleCategory(cat.name,cat.id)}
+                                    onChange={() => toggleCategory(cat.name, cat.id)}
                                     className="w-4 h-4"
                                 />
                                 <span>{cat.name}</span>
@@ -130,7 +128,7 @@ export default function ProductsPage() {
                                 type="number"
                                 value={priceRange[0]}
                                 min={0}
-                                onChange={(e) => setPriceRange([Number(e.target.value), priceRange[1]])}
+                                onChange={e => setPriceRange([Number(e.target.value), priceRange[1]])}
                                 className="w-20 px-2 py-1 border border-gray-300 rounded-lg text-sm"
                                 placeholder="Min"
                             />
@@ -139,18 +137,17 @@ export default function ProductsPage() {
                                 min={0}
                                 max={10000}
                                 value={priceRange[0]}
-                                onChange={(e) => setPriceRange([Number(e.target.value), priceRange[1]])}
+                                onChange={e => setPriceRange([Number(e.target.value), priceRange[1]])}
                                 className="flex-1"
                             />
                         </div>
-
                         <div className="flex items-center gap-2 mb-2">
                             <span className="w-12">Max:</span>
                             <input
                                 type="number"
                                 value={priceRange[1]}
                                 max={10000}
-                                onChange={(e) => setPriceRange([priceRange[0], Number(e.target.value)])}
+                                onChange={e => setPriceRange([priceRange[0], Number(e.target.value)])}
                                 className="w-20 px-2 py-1 border border-gray-300 rounded-lg text-sm"
                                 placeholder="Max"
                             />
@@ -159,7 +156,7 @@ export default function ProductsPage() {
                                 min={0}
                                 max={10000}
                                 value={priceRange[1]}
-                                onChange={(e) => setPriceRange([priceRange[0], Number(e.target.value)])}
+                                onChange={e => setPriceRange([priceRange[0], Number(e.target.value)])}
                                 className="flex-1"
                             />
                         </div>
@@ -172,7 +169,9 @@ export default function ProductsPage() {
                 {/* Ürünler */}
                 <main className="w-full lg:w-3/4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                     {filteredProducts.length === 0 ? (
-                        <p className="col-span-full text-center text-gray-500">Bu filtreye uygun ürün bulunamadı.</p>
+                        <p className="col-span-full text-center text-gray-500">
+                            Bu filtreye uygun ürün bulunamadı.
+                        </p>
                     ) : (
                         filteredProducts.map(product => (
                             <div
@@ -224,12 +223,12 @@ export default function ProductsPage() {
                                         >
                                             Detayları Gör
                                         </button>
-                                            <button
-                                                onClick={() => addToCart(product)}
-                                                className="w-full bg-gray-100 text-gray-800 py-2 rounded-lg hover:bg-gray-200 transition-colors"
-                                            >
-                                                Sepete Ekle
-                                            </button>
+                                        <button
+                                            onClick={() => addToCart(product)}
+                                            className="w-full bg-gray-100 text-gray-800 py-2 rounded-lg hover:bg-gray-200 transition-colors"
+                                        >
+                                            Sepete Ekle
+                                        </button>
                                     </div>
                                 </div>
                             </div>
@@ -238,6 +237,6 @@ export default function ProductsPage() {
                 </main>
             </div>
             <Footer />
-        </div>
+        </>
     );
 }

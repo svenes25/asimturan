@@ -1,7 +1,7 @@
 from pydantic import BaseModel
 from datetime import datetime
 
-from api.schemas.categories import CategoriesBase, CampaignCategoriesRead
+from .categories import CampaignCategoriesRead
 
 
 class ProductBase(BaseModel):

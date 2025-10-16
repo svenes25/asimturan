@@ -3,7 +3,7 @@ from typing import List
 from pydantic import BaseModel
 from datetime import datetime
 
-from api.schemas.order_details import OrderDetailsBase
+from .order_details import OrderDetailsBase
 
 
 class OrdersBase(BaseModel):

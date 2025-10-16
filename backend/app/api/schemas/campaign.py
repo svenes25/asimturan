@@ -3,8 +3,8 @@ from typing import Optional
 from pydantic import BaseModel
 from datetime import date
 
-from api.schemas.categories import CampaignCategoriesRead
-from api.schemas.product import ProductRead, ProductBase
+from .categories import CampaignCategoriesRead
+from .product import ProductBase
 
 
 class CampaignBase(BaseModel):
