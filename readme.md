@@ -2,7 +2,7 @@ Bu proje, **FastAPI + React.JS + PostgreSQL** kullanılarak geliştirilmiş bir 
 
 ---
 
-## 📦 Teknolojiler
+## Teknolojiler
 
 - **Backend:** Python 3.12, FastAPI
 - **Frontend:** React 
@@ -14,7 +14,7 @@ Bu proje, **FastAPI + React.JS + PostgreSQL** kullanılarak geliştirilmiş bir 
 
 ---
 
-## 🚀 Özellikler
+## Özellikler
 
 - Kullanıcı kayıt, giriş ve güncelleme
 - Şifre değiştirme ve yetkilendirme
@@ -25,7 +25,7 @@ Bu proje, **FastAPI + React.JS + PostgreSQL** kullanılarak geliştirilmiş bir 
 
 ---
 
-## 📁 Proje Yapısı
+## Proje Yapısı
 
 ```
 asimturan
@@ -48,7 +48,7 @@ asimturan
 
 ---
 
-## ⚙️ Kurulum ve Çalıştırma
+## Kurulum ve Çalıştırma
 
 ### 1. Repo'yu klonla
 
@@ -80,7 +80,7 @@ http://localhost:8000/docs
 
 ---
 
-## 🧩 Docker Compose Örnek Yapısı
+## Docker Compose Örnek Yapısı
 
 ```yaml
 version: "3.9"
