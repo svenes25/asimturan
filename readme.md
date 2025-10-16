@@ -1,5 +1,3 @@
-# Necmettin Erbakan University – E-Ticaret Backend
-
 Bu proje, **FastAPI + React.JS + PostgreSQL** kullanılarak geliştirilmiş bir e-ticaret sitesi uygulamasıdır. Giriş/Kayıt, Anasayfa, Ürünler, İletişim, Profil, Admin Paneli Ürün Yönetimi, Sipariş Yönetimi, Kampanya Yönetimi, Ürün Yorumları gibi temel işlevleri destekler. Proje, **Docker** ile kolayca ayağa kaldırılabilir.
 
 ---
